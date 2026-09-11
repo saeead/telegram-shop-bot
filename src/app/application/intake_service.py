@@ -67,7 +67,7 @@ class ProductIntakeService:
         product = Product(
             product_code=product_code,
             name=f"Untitled {product_code}",
-            price=Decimal("0"),
+            price=Decimal(0),
             files=product_files,
         )
         intake.attach_product(product.id)
