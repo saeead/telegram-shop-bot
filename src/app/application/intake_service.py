@@ -126,7 +126,11 @@ class ProductIntakeService:
 
     async def cancel(self, intake_id: UUID) -> None:
         intake = await self._require_intake(intake_id)
-        if intake.state in {ProductIntakeState.PUBLISHED, ProductIntakeState.FAILED, ProductIntakeState.CANCELLED}:
+        if intake.state in {
+            ProductIntakeState.PUBLISHED,
+            ProductIntakeState.FAILED,
+            ProductIntakeState.CANCELLED,
+        }:
             raise ValueError("intake cannot be cancelled in its current state")
         intake.transition_to(ProductIntakeState.CANCELLED)
         await self._repository.save_intake(intake)
