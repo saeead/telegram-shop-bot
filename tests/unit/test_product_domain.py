@@ -31,7 +31,7 @@ def test_product_aggregate_supports_multiple_previews_and_main_files() -> None:
     product = Product(
         product_code="p-ABC12345",
         name="Model",
-        price=Decimal("250000"),
+        price=Decimal(250000),
         category=Category("Animals"),
         tags=[Tag("stl"), Tag("toy")],
         files=[make_file(1, ProductFileRole.PREVIEW), make_file(2), make_file(3)],
@@ -48,7 +48,7 @@ def test_product_rejects_duplicate_telegram_messages() -> None:
         Product(
             product_code="P-DUPLICATE",
             name="Model",
-            price=Decimal("1"),
+            price=Decimal(1),
             files=[make_file(1), make_file(1)],
         )
 
@@ -57,7 +57,7 @@ def test_product_requires_main_file_before_ready() -> None:
     product = Product(
         product_code="P-PREVIEWONLY",
         name="Preview",
-        price=Decimal("1"),
+        price=Decimal(1),
         files=[make_file(1, ProductFileRole.PREVIEW)],
     )
     with pytest.raises(ValueError, match="at least one main file"):
