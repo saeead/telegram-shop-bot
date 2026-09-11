@@ -1,53 +1,58 @@
 # Session Handoff
 
 ## Where we are
-Phase 1 — Foundation & Harness is verified and passing. Phase 2 — Product Intake & Domain is authorized to begin after the Phase 1 branch is preserved as the verified foundation.
+Phase 2 — Product Intake & Domain is verified and passing. Phase 3 — Store & Admin is now active on `phase-2-product-intake` and must be implemented without payment or delivery.
 
-## Active feature state
-No Phase 2 feature is `in_progress` on this Phase 1 branch. FND-001..FND-004 are `passing`; PRD-001 and PRD-002 remain `not_started` until the Phase 2 branch begins.
+## Verified Phase 2 evidence
+- GitHub Actions CI run: `34634205262`
+- PR #2 merge commit verified: `688e3eebccbaa16ee3b3a22c519b11ad69714a7c`
+- Phase 2 head commit verified: `23db38397da7f043eb3b64d8a156abf885ba45ef`
+- `scripts/check.sh`: 19 tests passed, formatting passed, mypy passed, and harness validation passed.
+- PostgreSQL and Redis service containers were healthy and Alembic upgraded successfully.
 
-## Phase 1 verification evidence
-- GitHub Actions CI run: `34632397963`
-- Verified implementation commit: `61544abfac695081c272c584656f4bfa252ef5f2`
-- CI verify job completed successfully.
-- The verify job installed dependencies, ran `alembic upgrade head`, and ran `scripts/check.sh` with PostgreSQL and Redis service containers.
-- FND-001..FND-004 are recorded as `passing` in `feature_list.json`.
+## Phase 2 completed scope
+- Product aggregate and ProductFile/ProductPreview/Category/Tag/ProductStatus/ProductIntake.
+- File classification and product code generation.
+- Intake FSM, metadata validation, admin review, confirmation, edit/cancel boundary.
+- PostgreSQL persistence and Redis transient intake state.
+- Telegram adapter boundary and tests.
+- No payment or delivery implementation.
 
-## Phase 2 authorization
-The Phase 1 gate is closed successfully. The next branch should start from the final verified Phase 1 commit and implement only Phase 2 scope.
+## Phase 3 scope
+- Public Telegram Store presentation of published products using preview media only.
+- Product caption builder outside the domain layer.
+- Multi-preview/media-group publication where supported.
+- Category navigation and tag filtering.
+- Customer Home/Categories/Products/Search/Back navigation.
+- Versioned and validated callback data.
+- Explicit admin authorization on every admin command and callback.
+- Admin menu for Products, Categories, Orders placeholder/navigation, and Settings placeholder/navigation as appropriate without implementing payment/order processing.
+- Product editing: price, name, category, tags; hide; republish; details.
+- Product visibility states including HIDDEN while preserving historical DB records.
+- Idempotent publication/republish prevention.
+- Audit log with actor, action, entity, entity_id, timestamp, metadata.
+- Tests for navigation, filtering, publication, hide, republish, edits, authorization, callback validation, and duplicate publication prevention.
 
-## Phase 2 scope
-- Build Product aggregate and related domain concepts.
-- Implement ProductFile/ProductPreview/Category/Tag/ProductStatus/ProductIntake concepts.
-- Implement explicit intake state machine with valid transitions and failure states.
-- Implement classification of Telegram-forwarded media/files without storing file bytes on the application server.
-- Implement product-code generation and metadata validation.
-- Implement application orchestration for admin intake, metadata collection, review, confirmation, edit, and cancellation.
-- Implement Telegram adapter boundary and fake adapter tests where practical.
-- Add PostgreSQL persistence for Phase 2 business data only.
-- Use Redis only through the existing application port/abstraction for FSM/transient intake state.
+## Phase 3 constraints
+- Payment is out of scope.
+- Zarinpal and crypto SDKs are out of scope.
+- Delivery/fulfillment is out of scope.
+- Main product files must never be published in the public Store channel.
+- Domain must not import aiogram, Telegram Bot API, SQLAlchemy, Redis, payment SDKs, or delivery SDKs.
+- Presentation/caption logic belongs outside the domain.
+- Admin authorization must be explicit and cannot rely on client-supplied callback data.
 
-## Explicitly out of scope
-- Customer purchase flow.
-- Payment/Zarinpal/crypto integration.
-- Delivery/fulfillment.
-- Store publication UX beyond the Phase 2 confirmation/publishing boundary needed by the intake use case.
-- WooCommerce/webhook integration.
-
-## Required architecture
-`presentation/telegram -> application -> domain`
-`infrastructure -> application/domain`
-`domain -> nothing external`
-
-Domain must not import aiogram, Telegram Bot API, SQLAlchemy, Redis, Zarinpal, or crypto SDKs.
-
-## Required verification before Phase 2 completion
+## Verification gate
+Before Phase 3 can be marked passing:
 - `pytest`
 - `ruff check .`
 - `ruff format --check .`
 - `mypy src`
-- Integration coverage for persistence, intake state, Redis FSM, and Telegram adapter boundary.
-- Record executable evidence in `feature_list.json` and `PROGRESS.md`.
+- PostgreSQL integration where relevant.
+- Redis integration where relevant.
+- Telegram adapter boundary tests.
+- Verify no main files are exposed through public publication code.
+- Verify publication idempotency and audit records.
 
 ## Next action
-Create the Phase 2 branch from the verified Phase 1 head, set exactly one Phase 2 feature to `in_progress`, and implement `PRD-001` first. Then implement `PRD-002`. Do not start Phase 3 until Phase 2 is verified.
+Create `phase-3-store-admin` from the verified Phase 2 state, implement Phase 3 features, update `feature_list.json`, `PROGRESS.md`, `CHANGELOG.md`, `DECISIONS.md`, and this handoff, then run the full verification gate. Do not start Phase 4 until Phase 3 is verified.
