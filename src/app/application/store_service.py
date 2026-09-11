@@ -57,6 +57,13 @@ class StoreService:
         product = await self._require_product(product_id)
         if product.status not in {ProductStatus.READY, ProductStatus.HIDDEN, ProductStatus.PUBLISHED}:
             raise ValueError("product is not publishable")
+        existing = await self._repository.get_publication(product.id)
+        if existing is not None and existing.channel_id == channel_id:
+            if product.status is not ProductStatus.PUBLISHED:
+                product.mark_published()
+                await self._repository.update(product)
+                await self._repository.commit()
+            return existing
         publication = await self._publisher.ensure_published(product, channel_id)
         await self._repository.save_publication(publication)
         await self._audit(actor, "publish", product.id, {"channel_id": channel_id})
@@ -98,6 +105,13 @@ class StoreService:
     async def republish(self, actor: int, product_id: UUID, channel_id: int):
         self._authorizer.require_admin(actor)
         product = await self._require_product(product_id)
+        existing = await self._repository.get_publication(product.id)
+        if existing is not None and existing.channel_id == channel_id:
+            if product.status is ProductStatus.HIDDEN:
+                product.mark_published()
+                await self._repository.update(product)
+                await self._repository.commit()
+            return existing
         if product.status is ProductStatus.HIDDEN:
             product.mark_published()
             await self._repository.update(product)
