@@ -44,4 +44,4 @@ jobs:
       - run: python -m pip install --upgrade pip
       - run: python -m pip install -e '.[dev]'
       - run: alembic upgrade head
-      - run: ./scripts/check.sh
+      - run: bash ./scripts/check.sh
