@@ -8,6 +8,7 @@ from app.config.settings import Settings
 from app.domain.order import Order, OrderItem, Payment, PaymentAttempt, PaymentAttemptStatus
 from app.infrastructure.commerce_repository import SqlAlchemyCommerceRepository
 from app.infrastructure.database import create_engine, create_session_factory
+from app.infrastructure.models import OrderModel
 
 
 @pytest.mark.asyncio
@@ -51,10 +52,9 @@ async def test_order_payment_attempt_round_trip() -> None:
             assert loaded_payment is not None
             assert loaded_payment.provider_reference == "AUTH-INTEGRATION"
             assert loaded_payment.attempts[0].metadata["payment_url"] == "https://example.test/pay"
-            model = await session.get(type(repository._session.get), None) if False else None
-            del model
-            await session.delete(await session.get(type(loaded_order), loaded_order.id) if False else None) if False else None
-            await session.execute(__import__("sqlalchemy").text("DELETE FROM orders WHERE id = :id"), {"id": order.id})
+            model = await session.get(OrderModel, order.id)
+            assert model is not None
+            await session.delete(model)
             await session.commit()
     finally:
         await engine.dispose()
