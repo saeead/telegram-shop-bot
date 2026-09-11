@@ -11,7 +11,7 @@ from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
 from aiogram.types import CallbackQuery, InlineKeyboardButton, InlineKeyboardMarkup, Message
 
-from app.application.store_service import AdminAuthorizer, ProductEdit, StoreService
+from app.application.store_service import ProductEdit, StoreService
 from app.config.settings import Settings
 from app.telegram.callbacks import parse_callback, product_callback
 
@@ -22,7 +22,6 @@ class AdminEditForm(StatesGroup):
 
 def create_admin_router(service: StoreService, settings: Settings) -> Router:
     router = Router(name="admin-store")
-    authorizer = AdminAuthorizer(settings.admin_ids)
 
     def authorized(user_id: int | None) -> bool:
         return user_id is not None and user_id in settings.admin_ids
@@ -50,12 +49,11 @@ def create_admin_router(service: StoreService, settings: Settings) -> Router:
                 await callback.message.answer("Admin", reply_markup=_admin_keyboard())
             return
         if data.action == "admin_product":
-            product_id = UUID(data.value)
-            await _show_product(callback, service, actor, product_id)
+            await _show_product(callback, service, actor, UUID(data.value))
             return
         await callback.answer("Unknown admin action", show_alert=True)
 
-    @router.callback_query(F.data.startswith("v1:product:"))
+    @router.callback_query(F.data.startswith("v1:product_"))
     async def product_action(callback: CallbackQuery, state: FSMContext) -> None:
         actor = callback.from_user.id
         if not authorized(actor):
@@ -66,7 +64,12 @@ def create_admin_router(service: StoreService, settings: Settings) -> Router:
         except ValueError:
             await callback.answer("Invalid action", show_alert=True)
             return
-        if data.action not in {"product_hide", "product_republish", "product_details", "product_edit_price"}:
+        if data.action not in {
+            "product_hide",
+            "product_republish",
+            "product_details",
+            "product_edit_price",
+        }:
             await callback.answer("Unknown product action", show_alert=True)
             return
         product_id = UUID(data.value)
@@ -120,14 +123,39 @@ def _admin_keyboard() -> InlineKeyboardMarkup:
     )
 
 
-async def _show_product(callback: CallbackQuery, service: StoreService, actor: int, product_id: UUID) -> None:
+async def _show_product(
+    callback: CallbackQuery,
+    service: StoreService,
+    actor: int,
+    product_id: UUID,
+) -> None:
     product = await service.details(actor, product_id)
     keyboard = InlineKeyboardMarkup(
         inline_keyboard=[
-            [InlineKeyboardButton(text="Edit price", callback_data=product_callback("product_edit_price", product.id))],
-            [InlineKeyboardButton(text="Hide", callback_data=product_callback("product_hide", product.id))],
-            [InlineKeyboardButton(text="Republish", callback_data=product_callback("product_republish", product.id))],
-            [InlineKeyboardButton(text="View details", callback_data=product_callback("product_details", product.id))],
+            [
+                InlineKeyboardButton(
+                    text="Edit price",
+                    callback_data=product_callback("product_edit_price", product.id),
+                )
+            ],
+            [
+                InlineKeyboardButton(
+                    text="Hide",
+                    callback_data=product_callback("product_hide", product.id),
+                )
+            ],
+            [
+                InlineKeyboardButton(
+                    text="Republish",
+                    callback_data=product_callback("product_republish", product.id),
+                )
+            ],
+            [
+                InlineKeyboardButton(
+                    text="View details",
+                    callback_data=product_callback("product_details", product.id),
+                )
+            ],
         ]
     )
     if callback.message:
