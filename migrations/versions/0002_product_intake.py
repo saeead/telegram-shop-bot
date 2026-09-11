@@ -23,7 +23,9 @@ def upgrade() -> None:
         sa.Column("product_code", sa.String(length=32), nullable=False),
         sa.Column("name", sa.String(length=255), nullable=False),
         sa.Column("category", sa.String(length=255), nullable=True),
-        sa.Column("tags", postgresql.JSONB(), nullable=False, server_default=sa.text("'[]'::jsonb")),
+        sa.Column(
+            "tags", postgresql.JSONB(), nullable=False, server_default=sa.text("'[]'::jsonb")
+        ),
         sa.Column("price", sa.Numeric(20, 0), nullable=False),
         sa.Column("currency", sa.String(length=3), nullable=False, server_default="IRR"),
         sa.Column("status", sa.String(length=32), nullable=False),
@@ -50,7 +52,11 @@ def upgrade() -> None:
         sa.Column("size", sa.Integer(), nullable=True),
         sa.Column("ordering", sa.Integer(), nullable=False, server_default="0"),
         sa.ForeignKeyConstraint(["product_id"], ["products.id"], ondelete="CASCADE"),
-        sa.UniqueConstraint("telegram_chat_id", "telegram_message_id", name="uq_product_file_telegram_message"),
+        sa.UniqueConstraint(
+            "telegram_chat_id",
+            "telegram_message_id",
+            name="uq_product_file_telegram_message",
+        ),
     )
     op.create_index("ix_product_files_product_id", "product_files", ["product_id"], unique=False)
     op.create_index("ix_product_files_role", "product_files", ["role"], unique=False)
@@ -62,12 +68,16 @@ def upgrade() -> None:
         sa.Column("state", sa.String(length=64), nullable=False),
         sa.Column("error_message", sa.String(length=2000), nullable=True),
         sa.Column("admin_chat_id", sa.Integer(), nullable=True),
-        sa.Column("metadata", postgresql.JSONB(), nullable=False, server_default=sa.text("'{}'::jsonb")),
+        sa.Column(
+            "metadata", postgresql.JSONB(), nullable=False, server_default=sa.text("'{}'::jsonb")
+        ),
         sa.Column("created_at", sa.DateTime(timezone=True), nullable=False),
         sa.Column("updated_at", sa.DateTime(timezone=True), nullable=False),
         sa.ForeignKeyConstraint(["product_id"], ["products.id"], ondelete="SET NULL"),
     )
-    op.create_index("ix_product_intakes_product_id", "product_intakes", ["product_id"], unique=False)
+    op.create_index(
+        "ix_product_intakes_product_id", "product_intakes", ["product_id"], unique=False
+    )
     op.create_index("ix_product_intakes_state", "product_intakes", ["state"], unique=False)
 
 
