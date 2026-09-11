@@ -93,6 +93,7 @@ class ProductIntakeService:
         product.set_tags([Tag(tag) for tag in metadata.tags])
         product.description = metadata.description.strip() if metadata.description else None
         product.validate()
+        await self._repository.update(product)
         intake.transition_to(ProductIntakeState.WAITING_FOR_ADMIN_CONFIRMATION)
         await self._repository.save_intake(intake)
         await self._repository.commit()
@@ -106,6 +107,7 @@ class ProductIntakeService:
             raise ValueError("intake has no product")
         product = await self._require_product(intake.product_id)
         product.mark_ready()
+        await self._repository.update(product)
         intake.transition_to(ProductIntakeState.PUBLISHING)
         await self._repository.save_intake(intake)
         await self._repository.commit()
@@ -117,6 +119,7 @@ class ProductIntakeService:
             await self._repository.commit()
             raise
         product.mark_published()
+        await self._repository.update(product)
         intake.transition_to(ProductIntakeState.PUBLISHED)
         await self._repository.save_intake(intake)
         await self._repository.commit()
