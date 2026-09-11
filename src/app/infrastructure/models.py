@@ -7,7 +7,7 @@ from decimal import Decimal
 from typing import Any
 from uuid import UUID
 
-from sqlalchemy import DateTime, ForeignKey, Integer, JSON, Numeric, String, UniqueConstraint
+from sqlalchemy import JSON, DateTime, ForeignKey, Integer, Numeric, String, UniqueConstraint
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 
 
@@ -72,4 +72,4 @@ class ProductIntakeModel(Base):
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
 
 
-__all__ = ["Base", "ProductIntakeModel", "ProductFileModel", "ProductModel"]
+__all__ = ["Base", "ProductFileModel", "ProductIntakeModel", "ProductModel"]
