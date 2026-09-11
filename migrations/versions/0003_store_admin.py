@@ -23,7 +23,12 @@ def upgrade() -> None:
         sa.Column("id", postgresql.UUID(as_uuid=True), primary_key=True, nullable=False),
         sa.Column("product_id", postgresql.UUID(as_uuid=True), nullable=False),
         sa.Column("channel_id", sa.Integer(), nullable=False),
-        sa.Column("media_message_ids", postgresql.JSONB(), nullable=False, server_default=sa.text("'[]'::jsonb")),
+        sa.Column(
+            "media_message_ids",
+            postgresql.JSONB(),
+            nullable=False,
+            server_default=sa.text("'[]'::jsonb"),
+        ),
         sa.Column("cta_message_id", sa.Integer(), nullable=True),
         sa.Column("state", sa.String(length=32), nullable=False, server_default="published"),
         sa.Column("created_at", sa.DateTime(timezone=True), nullable=False),
@@ -40,7 +45,9 @@ def upgrade() -> None:
         sa.Column("entity", sa.String(length=64), nullable=False),
         sa.Column("entity_id", sa.String(length=64), nullable=False),
         sa.Column("timestamp", sa.DateTime(timezone=True), nullable=False),
-        sa.Column("metadata", postgresql.JSONB(), nullable=False, server_default=sa.text("'{}'::jsonb")),
+        sa.Column(
+            "metadata", postgresql.JSONB(), nullable=False, server_default=sa.text("'{}'::jsonb")
+        ),
     )
     op.create_index("ix_audit_logs_actor", "audit_logs", ["actor"], unique=False)
     op.create_index("ix_audit_logs_action", "audit_logs", ["action"], unique=False)
