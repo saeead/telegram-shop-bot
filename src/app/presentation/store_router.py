@@ -74,12 +74,13 @@ async def _answer_categories(callback: CallbackQuery, categories: list[str]) -> 
 
 async def _answer_tags(callback: CallbackQuery, tags: list[str]) -> None:
     buttons = [
-        [InlineKeyboardButton(text=tag, callback_data=encode_callback("tag", tag))]
-        for tag in tags
+        [InlineKeyboardButton(text=tag, callback_data=encode_callback("tag", tag))] for tag in tags
     ]
     buttons.append([InlineKeyboardButton(text="Home", callback_data="v1:products:home")])
     if callback.message:
-        await callback.message.answer("Tags", reply_markup=InlineKeyboardMarkup(inline_keyboard=buttons))
+        await callback.message.answer(
+            "Tags", reply_markup=InlineKeyboardMarkup(inline_keyboard=buttons)
+        )
     await callback.answer()
 
 
@@ -89,6 +90,8 @@ async def _answer_products(callback: CallbackQuery, products: list[Any]) -> None
             await callback.message.answer("No products found.")
         else:
             await callback.message.answer(
-                "\n".join(f"{product.name} — {product.price} {product.currency}" for product in products)
+                "\n".join(
+                    f"{product.name} — {product.price} {product.currency}" for product in products
+                )
             )
     await callback.answer()
