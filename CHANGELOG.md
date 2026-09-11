@@ -1,5 +1,21 @@
 # Changelog
 
+## Unreleased — Phase 3 Store & Admin
+
+- Added public Store caption/presentation helpers outside the Product domain.
+- Added Telegram Store publisher adapter that publishes preview media only and never main product files.
+- Added Buy CTA callback boundary without implementing payment.
+- Added versioned and safely encoded callback data validation.
+- Added Home, Categories, Tags, Products, category filtering, and tag filtering navigation.
+- Added HIDDEN product status and hide/republish lifecycle.
+- Added StorePublication persistence with idempotent duplicate-publication prevention.
+- Added explicit server-side admin authorization.
+- Added Admin product editing for name, price, category, and tags, plus hide, republish, and details actions.
+- Added AuditLog persistence for actor, action, entity, entity_id, timestamp, and metadata.
+- Added Alembic migration `0003_store_admin`.
+- Added Store/Admin unit tests and PostgreSQL persistence integration coverage.
+- Phase 3 verification remains pending; do not mark Phase 3 passing until the final CI gate is green.
+
 ## Unreleased — Phase 2 Product Intake & Domain
 
 - Added Product aggregate and ProductFile/ProductPreview domain concepts.
@@ -27,4 +43,4 @@
 - Verified Phase 1 through GitHub Actions CI run `34632397963` with PostgreSQL/Redis services, Alembic migration, and the standard verification harness.
 - Marked FND-001..FND-004 as `passing` with executable evidence.
 
-No payment or delivery features are included in Phase 2.
+No payment or delivery features are included in Phase 2 or Phase 3.
