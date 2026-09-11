@@ -28,6 +28,10 @@ class Settings(BaseSettings):
     database_url: str = "postgresql+asyncpg://postgres:postgres@localhost:5432/telegram_file_store"
     redis_url: str = "redis://localhost:6379/0"
 
+    zarinpal_merchant_id: str = ""
+    zarinpal_sandbox: bool = True
+    payment_callback_url: str = ""
+
     @property
     def admin_ids(self) -> frozenset[int]:
         values: set[int] = set()
