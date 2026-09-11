@@ -121,9 +121,7 @@ class Product:
 
     @property
     def previews(self) -> list[ProductPreview]:
-        return [
-            ProductPreview(file) for file in self.files if file.role is ProductFileRole.PREVIEW
-        ]
+        return [ProductPreview(file) for file in self.files if file.role is ProductFileRole.PREVIEW]
 
     @property
     def main_files(self) -> list[ProductFile]:
