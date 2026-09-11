@@ -24,6 +24,7 @@ def upgrade() -> None:
         sa.Column("customer_telegram_id", sa.BigInteger(), nullable=False),
         sa.Column("order_code", sa.String(length=64), nullable=False),
         sa.Column("currency", sa.String(length=3), nullable=False),
+        sa.Column("total_amount", sa.Numeric(20, 0), nullable=False),
         sa.Column("status", sa.String(length=32), nullable=False),
         sa.Column("expires_at", sa.DateTime(timezone=True), nullable=True),
         sa.Column("idempotency_key", sa.String(length=255), nullable=False),
