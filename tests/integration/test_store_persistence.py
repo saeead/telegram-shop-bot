@@ -7,8 +7,9 @@ import pytest
 
 from app.application.store_ports import AuditEntry, StorePublication
 from app.config.settings import Settings
-from app.domain.product import Product, ProductFile, ProductFileRole, ProductFileType, ProductStatus
+from app.domain.product import Product, ProductFile, ProductFileRole, ProductFileType
 from app.infrastructure.database import create_engine, create_session_factory
+from app.infrastructure.models import ProductModel
 from app.infrastructure.product_repository import SqlAlchemyProductRepository
 
 
@@ -18,8 +19,26 @@ def make_product() -> Product:
         name="Store Product",
         price=Decimal(1000),
         files=[
-            ProductFile("preview", 1001, -100123, ProductFileType.IMAGE, ProductFileRole.PREVIEW, None, "image/jpeg", 10),
-            ProductFile("main", 1002, -100123, ProductFileType.ARCHIVE, ProductFileRole.MAIN, "model.zip", "application/zip", 20),
+            ProductFile(
+                "preview",
+                1001,
+                -100123,
+                ProductFileType.IMAGE,
+                ProductFileRole.PREVIEW,
+                None,
+                "image/jpeg",
+                10,
+            ),
+            ProductFile(
+                "main",
+                1002,
+                -100123,
+                ProductFileType.ARCHIVE,
+                ProductFileRole.MAIN,
+                "model.zip",
+                "application/zip",
+                20,
+            ),
         ],
     )
 
@@ -43,11 +62,21 @@ async def test_store_publication_and_audit_round_trip() -> None:
             publication = StorePublication(product.id, -100999, (20, 21), 22)
             await repository.save_publication(publication)
             await repository.save_audit(
-                AuditEntry(42, "publish", "product", str(product.id), datetime.now(UTC), {"test": True})
+                AuditEntry(
+                    42,
+                    "publish",
+                    "product",
+                    str(product.id),
+                    datetime.now(UTC),
+                    {"test": True},
+                )
             )
             await repository.commit()
             loaded = await repository.get_publication(product.id)
             assert loaded == publication
-            await session.rollback()
+            stored = await session.get(ProductModel, product.id)
+            assert stored is not None
+            await session.delete(stored)
+            await session.commit()
     finally:
         await engine.dispose()
