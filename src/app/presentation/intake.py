@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 from decimal import Decimal, InvalidOperation
+from typing import Any
+from uuid import UUID
 
 from aiogram import F, Router
 from aiogram.filters import Command
@@ -11,7 +13,8 @@ from aiogram.fsm.state import State, StatesGroup
 from aiogram.types import CallbackQuery, InlineKeyboardButton, InlineKeyboardMarkup, Message
 
 from app.application.intake_service import ProductIntakeService, ProductMetadata
-from app.catalog.classification import IncomingFile
+from app.application.telegram_ports import AdminReview
+from app.catalog.classification import IncomingFile, IncomingMediaKind
 from app.config.settings import Settings
 from app.telegram.intake_adapter import message_to_incoming_file
 
@@ -39,6 +42,21 @@ def create_intake_router(service: ProductIntakeService, settings: Settings) -> R
         await state.set_state(IntakeForm.RECEIVING)
         await message.answer("Send the product previews/files, then send /done.")
 
+    @router.message(IntakeForm.RECEIVING, Command("done"))
+    async def finish_receiving(message: Message, state: FSMContext) -> None:
+        if not is_admin(message):
+            return
+        data = await state.get_data()
+        raw_files = data.get("files", [])
+        files = [_deserialize_file(item) for item in raw_files if isinstance(item, dict)]
+        if not files:
+            await message.answer("No intake files received yet.")
+            return
+        intake = await service.receive_batch(message.chat.id, files)
+        await state.update_data(intake_id=str(intake.id))
+        await state.set_state(IntakeForm.NAME)
+        await message.answer(f"Product code: {await _product_code(service, intake.id)}\nEnter product name:")
+
     @router.message(IntakeForm.RECEIVING)
     async def receive_file(message: Message, state: FSMContext) -> None:
         if not is_admin(message):
@@ -52,20 +70,6 @@ def create_intake_router(service: ProductIntakeService, settings: Settings) -> R
         files.append(_serialize_file(incoming))
         await state.update_data(files=files)
         await message.answer(f"Received item {len(files)}. Continue or send /done.")
-
-    @router.message(IntakeForm.RECEIVING, Command("done"))
-    async def finish_receiving(message: Message, state: FSMContext) -> None:
-        if not is_admin(message):
-            return
-        data = await state.get_data()
-        files = [_deserialize_file(item) for item in data.get("files", [])]
-        if not files:
-            await message.answer("No intake files received yet.")
-            return
-        intake = await service.receive_batch(message.chat.id, files)
-        await state.update_data(intake_id=str(intake.id))
-        await state.set_state(IntakeForm.NAME)
-        await message.answer(f"Product code: {await _product_code(service, intake.id)}\nEnter product name:")
 
     @router.message(IntakeForm.NAME)
     async def receive_name(message: Message, state: FSMContext) -> None:
@@ -101,11 +105,11 @@ def create_intake_router(service: ProductIntakeService, settings: Settings) -> R
 
     @router.message(IntakeForm.TAGS, Command("skip"))
     async def skip_tags(message: Message, state: FSMContext) -> None:
-        await _finish_metadata(message, state, "")
+        await _finish_metadata(service, message, state, "")
 
     @router.message(IntakeForm.TAGS)
     async def receive_tags(message: Message, state: FSMContext) -> None:
-        await _finish_metadata(message, state, message.text or "")
+        await _finish_metadata(service, message, state, message.text or "")
 
     @router.callback_query(IntakeForm.CONFIRMATION, F.data == "product:confirm")
     async def confirm(callback: CallbackQuery, state: FSMContext) -> None:
@@ -135,14 +139,18 @@ def create_intake_router(service: ProductIntakeService, settings: Settings) -> R
     return router
 
 
-async def _finish_metadata(message: Message, state: FSMContext, tags_text: str) -> None:
+async def _finish_metadata(
+    service: ProductIntakeService,
+    message: Message,
+    state: FSMContext,
+    tags_text: str,
+) -> None:
     data = await state.get_data()
-    service = data["service"]
-    intake_id = data["intake_id"]
+    intake_id = UUID(str(data["intake_id"]))
     metadata = ProductMetadata(
-        name=data["name"],
-        category=data["category"],
-        price=Decimal(data["price"]),
+        name=str(data.get("name", "")),
+        category=str(data.get("category", "")),
+        price=Decimal(str(data.get("price", "0"))),
         tags=tuple(tag.strip() for tag in tags_text.split(",") if tag.strip()),
     )
     review = await service.set_metadata(intake_id, metadata)
@@ -160,7 +168,7 @@ def _confirmation_keyboard() -> InlineKeyboardMarkup:
     )
 
 
-def _format_review(review: object) -> str:
+def _format_review(review: AdminReview) -> str:
     return (
         f"Product Code: {review.product_code}\n"
         f"Name: {review.name}\n"
@@ -172,7 +180,7 @@ def _format_review(review: object) -> str:
     )
 
 
-def _serialize_file(file: IncomingFile) -> dict[str, object]:
+def _serialize_file(file: IncomingFile) -> dict[str, Any]:
     return {
         "telegram_file_id": file.telegram_file_id,
         "telegram_message_id": file.telegram_message_id,
@@ -184,11 +192,9 @@ def _serialize_file(file: IncomingFile) -> dict[str, object]:
     }
 
 
-def _deserialize_file(data: dict[str, object]) -> IncomingFile:
-    from app.catalog.classification import IncomingMediaKind
-
+def _deserialize_file(data: dict[str, Any]) -> IncomingFile:
     return IncomingFile(
-        telegram_file_id=data["telegram_file_id"],
+        telegram_file_id=data.get("telegram_file_id"),
         telegram_message_id=int(data["telegram_message_id"]),
         telegram_chat_id=int(data["telegram_chat_id"]),
         media_kind=IncomingMediaKind(str(data["media_kind"])),
@@ -198,11 +204,9 @@ def _deserialize_file(data: dict[str, object]) -> IncomingFile:
     )
 
 
-def _intake_id(data: dict[str, object]):
-    from uuid import UUID
-
+def _intake_id(data: dict[str, Any]) -> UUID:
     return UUID(str(data["intake_id"]))
 
 
-async def _product_code(service: ProductIntakeService, intake_id):
+async def _product_code(service: ProductIntakeService, intake_id: UUID) -> str:
     return (await service.review(intake_id)).product_code
