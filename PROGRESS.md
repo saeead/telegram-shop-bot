@@ -12,7 +12,7 @@
 | Phase | Status | Exit condition |
 |---|---|---|
 | 1 Foundation & Harness | passing | FND-001..FND-004 passing with reproducible evidence |
-| 2 Product & Telegram Intake | in_progress | admin can intake, classify, collect metadata, confirm, publish |
+| 2 Product & Telegram Intake | not_started | admin can intake, classify, collect metadata, confirm, publish |
 | 3 Store & Admin | not_started | store browsing/search/admin management works |
 | 4 Orders & Payment | not_started | IRR + crypto abstraction and idempotent payment flow |
 | 5 Delivery & Commerce | not_started | paid multi-file delivery is reliable and auditable |
@@ -53,7 +53,7 @@
 ### Session 003 — Phase 1 verification gate
 - CI run `34632397963` completed successfully for the Phase 1 branch.
 - FND-001..FND-004 are now truthfully marked `passing` with executable evidence.
-- Phase 2 is authorized to begin.
+- Phase 2 is authorized to begin, but its features remain `not_started` on the Phase 1 branch.
 
 ## Phase gate
 Phase 2 may begin because FND-001, FND-002, FND-003, and FND-004 are independently verified and marked `passing` with CI evidence.
