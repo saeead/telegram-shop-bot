@@ -11,15 +11,7 @@ from sqlalchemy.orm import selectinload
 
 from app.application.catalog_ports import ProductRepository
 from app.domain.intake import ProductIntake, ProductIntakeState
-from app.domain.product import (
-    Category,
-    Product,
-    ProductFile,
-    ProductFileRole,
-    ProductFileType,
-    ProductStatus,
-    Tag,
-)
+from app.domain.product import Category, Product, ProductFile, ProductFileRole, ProductFileType, ProductStatus, Tag
 from app.infrastructure.models import ProductFileModel, ProductIntakeModel, ProductModel
 
 
@@ -82,17 +74,18 @@ class SqlAlchemyProductRepository(ProductRepository):
         model = await self._session.get(ProductIntakeModel, intake.id)
         now = datetime.now(UTC)
         if model is None:
-            model = ProductIntakeModel(
-                id=intake.id,
-                product_id=intake.product_id,
-                state=intake.state.value,
-                error_message=intake.error_message,
-                admin_chat_id=admin_chat_id,
-                intake_metadata={},
-                created_at=now,
-                updated_at=now,
+            self._session.add(
+                ProductIntakeModel(
+                    id=intake.id,
+                    product_id=intake.product_id,
+                    state=intake.state.value,
+                    error_message=intake.error_message,
+                    admin_chat_id=admin_chat_id,
+                    intake_metadata={},
+                    created_at=now,
+                    updated_at=now,
+                )
             )
-            self._session.add(model)
             return
         model.product_id = intake.product_id
         model.state = intake.state.value
@@ -111,6 +104,9 @@ class SqlAlchemyProductRepository(ProductRepository):
             state=ProductIntakeState(model.state),
             error_message=model.error_message,
         )
+
+    async def commit(self) -> None:
+        await self._session.commit()
 
 
 def _to_domain(model: ProductModel) -> Product:
