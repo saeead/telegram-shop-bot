@@ -7,8 +7,13 @@ from datetime import UTC, datetime
 from decimal import Decimal
 from uuid import UUID
 
-from app.application.store_ports import AuditEntry, StorePublisherPort, StoreRepositoryPort
-from app.domain.product import Category, ProductStatus, Tag
+from app.application.store_ports import (
+    AuditEntry,
+    StorePublication,
+    StorePublisherPort,
+    StoreRepositoryPort,
+)
+from app.domain.product import Category, Product, ProductStatus, Tag
 
 
 class AuthorizationError(PermissionError):
@@ -49,13 +54,17 @@ class StoreService:
     async def tags(self) -> list[str]:
         return await self._repository.list_tags()
 
-    async def products(self, category: str | None = None, tag: str | None = None):
+    async def products(self, category: str | None = None, tag: str | None = None) -> list[Product]:
         return await self._repository.list_published(category=category, tag=tag)
 
-    async def publish(self, actor: int, product_id: UUID, channel_id: int):
+    async def publish(self, actor: int, product_id: UUID, channel_id: int) -> StorePublication:
         self._authorizer.require_admin(actor)
         product = await self._require_product(product_id)
-        if product.status not in {ProductStatus.READY, ProductStatus.HIDDEN, ProductStatus.PUBLISHED}:
+        if product.status not in {
+            ProductStatus.READY,
+            ProductStatus.HIDDEN,
+            ProductStatus.PUBLISHED,
+        }:
             raise ValueError("product is not publishable")
         existing = await self._repository.get_publication(product.id)
         if existing is not None and existing.channel_id == channel_id:
@@ -102,7 +111,7 @@ class StoreService:
         await self._audit(actor, "edit_product", product.id, {"fields": _changed_fields(changes)})
         await self._repository.commit()
 
-    async def republish(self, actor: int, product_id: UUID, channel_id: int):
+    async def republish(self, actor: int, product_id: UUID, channel_id: int) -> StorePublication:
         self._authorizer.require_admin(actor)
         product = await self._require_product(product_id)
         existing = await self._repository.get_publication(product.id)
@@ -121,17 +130,19 @@ class StoreService:
         await self._repository.commit()
         return publication
 
-    async def details(self, actor: int, product_id: UUID):
+    async def details(self, actor: int, product_id: UUID) -> Product:
         self._authorizer.require_admin(actor)
         return await self._require_product(product_id)
 
-    async def _require_product(self, product_id: UUID):
+    async def _require_product(self, product_id: UUID) -> Product:
         product = await self._repository.get(product_id)
         if product is None:
             raise ValueError("product not found")
         return product
 
-    async def _audit(self, actor: int, action: str, entity_id: UUID, metadata: dict[str, object]) -> None:
+    async def _audit(
+        self, actor: int, action: str, entity_id: UUID, metadata: dict[str, object]
+    ) -> None:
         await self._repository.save_audit(
             AuditEntry(
                 actor=actor,
