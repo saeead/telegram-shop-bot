@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-from datetime import UTC, datetime
 from decimal import Decimal
 from uuid import UUID
 
@@ -20,7 +19,12 @@ from app.domain.order import (
     PaymentAttemptStatus,
     PaymentStatus,
 )
-from app.infrastructure.models import OrderItemModel, OrderModel, PaymentAttemptModel, PaymentModel
+from app.infrastructure.models import (
+    OrderItemModel,
+    OrderModel,
+    PaymentAttemptModel,
+    PaymentModel,
+)
 
 
 class SqlAlchemyCommerceRepository(CommerceRepositoryPort):
@@ -30,7 +34,10 @@ class SqlAlchemyCommerceRepository(CommerceRepositoryPort):
     async def get_order(self, order_id: UUID) -> Order | None:
         model = await self._session.scalar(
             select(OrderModel)
-            .options(selectinload(OrderModel.items), selectinload(OrderModel.payments).selectinload(PaymentModel.attempts))
+            .options(
+                selectinload(OrderModel.items),
+                selectinload(OrderModel.payments).selectinload(PaymentModel.attempts),
+            )
             .where(OrderModel.id == order_id)
         )
         return self._order_to_domain(model) if model else None
@@ -38,7 +45,10 @@ class SqlAlchemyCommerceRepository(CommerceRepositoryPort):
     async def get_order_by_idempotency_key(self, key: str) -> Order | None:
         model = await self._session.scalar(
             select(OrderModel)
-            .options(selectinload(OrderModel.items), selectinload(OrderModel.payments).selectinload(PaymentModel.attempts))
+            .options(
+                selectinload(OrderModel.items),
+                selectinload(OrderModel.payments).selectinload(PaymentModel.attempts),
+            )
             .where(OrderModel.idempotency_key == key)
         )
         return self._order_to_domain(model) if model else None
@@ -99,12 +109,19 @@ class SqlAlchemyCommerceRepository(CommerceRepositoryPort):
         model = await self._session.scalar(
             select(PaymentModel)
             .options(selectinload(PaymentModel.attempts))
-            .where(PaymentModel.provider == provider, PaymentModel.provider_reference == reference)
+            .where(
+                PaymentModel.provider == provider,
+                PaymentModel.provider_reference == reference,
+            )
         )
         return self._payment_to_domain(model) if model else None
 
     async def save_payment(self, payment: Payment) -> None:
-        model = await self._session.get(PaymentModel, payment.id)
+        model = await self._session.scalar(
+            select(PaymentModel)
+            .options(selectinload(PaymentModel.attempts))
+            .where(PaymentModel.id == payment.id)
+        )
         if model is None:
             model = PaymentModel(
                 id=payment.id,
