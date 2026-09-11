@@ -44,9 +44,26 @@ def create_admin_router(service: StoreService, settings: Settings) -> Router:
             await callback.answer("Invalid action", show_alert=True)
             return
         if data.action == "admin_menu":
-            await callback.answer()
-            if callback.message:
-                await callback.message.answer("Admin", reply_markup=_admin_keyboard())
+            if data.value == "products":
+                products = await service.products()
+                await callback.answer()
+                if callback.message:
+                    await callback.message.answer(
+                        "Products",
+                        reply_markup=InlineKeyboardMarkup(
+                            inline_keyboard=[
+                                [
+                                    InlineKeyboardButton(
+                                        text=product.name,
+                                        callback_data=product_callback("admin_product", product.id),
+                                    )
+                                ]
+                                for product in products
+                            ]
+                        ),
+                    )
+                return
+            await callback.answer(f"{data.value.title()} management is available as a placeholder in this phase.")
             return
         if data.action == "admin_product":
             await _show_product(callback, service, actor, UUID(data.value))
@@ -69,6 +86,9 @@ def create_admin_router(service: StoreService, settings: Settings) -> Router:
             "product_republish",
             "product_details",
             "product_edit_price",
+            "product_edit_name",
+            "product_edit_category",
+            "product_edit_tags",
         }:
             await callback.answer("Unknown product action", show_alert=True)
             return
@@ -81,12 +101,13 @@ def create_admin_router(service: StoreService, settings: Settings) -> Router:
             await callback.answer("Details")
             if callback.message:
                 await callback.message.answer(f"{product.name}\n{product.price} {product.currency}")
-        elif data.action == "product_edit_price":
-            await state.update_data(product_id=str(product_id))
+        elif data.action.startswith("product_edit_"):
+            field = data.action.removeprefix("product_edit_")
+            await state.update_data(product_id=str(product_id), field=field)
             await state.set_state(AdminEditForm.VALUE)
-            await callback.answer("Edit price")
+            await callback.answer(f"Edit {field}")
             if callback.message:
-                await callback.message.answer("Enter the new price:")
+                await callback.message.answer(f"Enter the new {field}:")
         elif data.action == "product_republish":
             if settings.telegram_store_channel_id == 0:
                 await callback.answer("Store channel is not configured", show_alert=True)
@@ -95,19 +116,30 @@ def create_admin_router(service: StoreService, settings: Settings) -> Router:
             await callback.answer("Republished")
 
     @router.message(AdminEditForm.VALUE)
-    async def edit_price(message: Message, state: FSMContext) -> None:
+    async def edit_product(message: Message, state: FSMContext) -> None:
         actor = message.from_user.id if message.from_user else None
         if actor is None or not authorized(actor):
             return
-        try:
-            price = Decimal((message.text or "").strip())
-        except InvalidOperation:
-            await message.answer("Invalid price.")
-            return
         data = await state.get_data()
-        await service.edit(actor, UUID(str(data["product_id"])), ProductEdit(price=price))
+        field = str(data.get("field", ""))
+        value = message.text or ""
+        try:
+            if field == "price":
+                changes = ProductEdit(price=Decimal(value.strip()))
+            elif field == "name":
+                changes = ProductEdit(name=value)
+            elif field == "category":
+                changes = ProductEdit(category=value)
+            elif field == "tags":
+                changes = ProductEdit(tags=tuple(tag.strip() for tag in value.split(",") if tag.strip()))
+            else:
+                raise ValueError("unsupported edit field")
+            await service.edit(actor, UUID(str(data["product_id"])), changes)
+        except (InvalidOperation, ValueError) as exc:
+            await message.answer(str(exc) or "Invalid value.")
+            return
         await state.clear()
-        await message.answer("Price updated.")
+        await message.answer(f"{field.title()} updated.")
 
     return router
 
@@ -132,30 +164,13 @@ async def _show_product(
     product = await service.details(actor, product_id)
     keyboard = InlineKeyboardMarkup(
         inline_keyboard=[
-            [
-                InlineKeyboardButton(
-                    text="Edit price",
-                    callback_data=product_callback("product_edit_price", product.id),
-                )
-            ],
-            [
-                InlineKeyboardButton(
-                    text="Hide",
-                    callback_data=product_callback("product_hide", product.id),
-                )
-            ],
-            [
-                InlineKeyboardButton(
-                    text="Republish",
-                    callback_data=product_callback("product_republish", product.id),
-                )
-            ],
-            [
-                InlineKeyboardButton(
-                    text="View details",
-                    callback_data=product_callback("product_details", product.id),
-                )
-            ],
+            [InlineKeyboardButton(text="Edit price", callback_data=product_callback("product_edit_price", product.id))],
+            [InlineKeyboardButton(text="Edit name", callback_data=product_callback("product_edit_name", product.id))],
+            [InlineKeyboardButton(text="Edit category", callback_data=product_callback("product_edit_category", product.id))],
+            [InlineKeyboardButton(text="Retag", callback_data=product_callback("product_edit_tags", product.id))],
+            [InlineKeyboardButton(text="Hide", callback_data=product_callback("product_hide", product.id))],
+            [InlineKeyboardButton(text="Republish", callback_data=product_callback("product_republish", product.id))],
+            [InlineKeyboardButton(text="View details", callback_data=product_callback("product_details", product.id))],
         ]
     )
     if callback.message:
