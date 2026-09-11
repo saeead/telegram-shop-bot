@@ -28,8 +28,8 @@ class ProductModel(Base):
     status: Mapped[str] = mapped_column(String(32), index=True)
     description: Mapped[str | None] = mapped_column(String(4000), nullable=True)
     created_by: Mapped[int | None] = mapped_column(Integer, nullable=True)
-    created_at: Mapped[datetime]
-    updated_at: Mapped[datetime]
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
 
     files: Mapped[list[ProductFileModel]] = relationship(
         back_populates="product", cascade="all, delete-orphan", order_by="ProductFileModel.ordering"
@@ -67,9 +67,9 @@ class ProductIntakeModel(Base):
     state: Mapped[str] = mapped_column(String(64), index=True)
     error_message: Mapped[str | None] = mapped_column(String(2000), nullable=True)
     admin_chat_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
-    metadata: Mapped[dict[str, Any]] = mapped_column(JSON, default=dict)
-    created_at: Mapped[datetime]
-    updated_at: Mapped[datetime]
+    intake_metadata: Mapped[dict[str, Any]] = mapped_column("metadata", JSON, default=dict)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
 
 
 __all__ = ["Base", "ProductIntakeModel", "ProductFileModel", "ProductModel"]
