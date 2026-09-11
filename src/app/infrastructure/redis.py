@@ -1,4 +1,5 @@
 from redis.asyncio import Redis
+from redis.exceptions import RedisError
 
 from app.application.ports.cache import CachePort
 
@@ -38,5 +39,5 @@ def create_redis_store(redis_url: str) -> RedisStore:
 async def check_redis_health(store: RedisStore) -> bool:
     try:
         return await store.ping()
-    except Exception:
+    except RedisError:
         return False
