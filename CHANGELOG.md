@@ -1,5 +1,19 @@
 # Changelog
 
+## Unreleased — Phase 2 Product Intake & Domain
+
+- Added Product aggregate and ProductFile/ProductPreview domain concepts.
+- Added Category, Tag, ProductStatus, and ProductIntake state machine.
+- Added Telegram file classification for preview and main roles.
+- Added product-code generation and metadata validation.
+- Added admin metadata review, confirmation, edit, cancellation, and publication boundary orchestration.
+- Added PostgreSQL product/intake persistence and Alembic migration `0002_product_intake`.
+- Added Redis transient intake state integration.
+- Added Telegram adapter boundary and fake/test coverage.
+- Added unit and integration tests for Product, classification, intake transitions, persistence, Redis, and Telegram boundaries.
+- Fixed Phase 2 Ruff formatting and verified the final branch through CI.
+- Verified Phase 2 with GitHub Actions CI run `34634205262`: 19 tests passed, Alembic succeeded, Ruff formatting/lint passed, mypy passed, and harness validation passed.
+
 ## Unreleased — Phase 1 Foundation
 
 - Added async PostgreSQL engine, session factory, and health check.
@@ -13,4 +27,4 @@
 - Verified Phase 1 through GitHub Actions CI run `34632397963` with PostgreSQL/Redis services, Alembic migration, and the standard verification harness.
 - Marked FND-001..FND-004 as `passing` with executable evidence.
 
-No store, product, payment, or delivery features were implemented in Phase 1.
+No payment or delivery features are included in Phase 2.
