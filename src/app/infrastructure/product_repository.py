@@ -11,7 +11,15 @@ from sqlalchemy.orm import selectinload
 
 from app.application.catalog_ports import ProductRepository
 from app.domain.intake import ProductIntake, ProductIntakeState
-from app.domain.product import Category, Product, ProductFile, ProductFileRole, ProductFileType, ProductStatus, Tag
+from app.domain.product import (
+    Category,
+    Product,
+    ProductFile,
+    ProductFileRole,
+    ProductFileType,
+    ProductStatus,
+    Tag,
+)
 from app.infrastructure.models import ProductFileModel, ProductIntakeModel, ProductModel
 
 
