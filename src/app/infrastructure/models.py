@@ -82,9 +82,7 @@ class ProductIntakeModel(Base):
 
 class StorePublicationModel(Base):
     __tablename__ = "store_publications"
-    __table_args__ = (
-        UniqueConstraint("product_id", name="uq_store_publication_product"),
-    )
+    __table_args__ = (UniqueConstraint("product_id", name="uq_store_publication_product"),)
 
     id: Mapped[UUID] = mapped_column(primary_key=True)
     product_id: Mapped[UUID] = mapped_column(ForeignKey("products.id", ondelete="CASCADE"))
