@@ -1,3 +1,5 @@
+"""SQLAlchemy persistence models for catalog, store, audit, and commerce state."""
+
 from __future__ import annotations
 
 from datetime import datetime
@@ -5,23 +7,8 @@ from decimal import Decimal
 from typing import Any
 from uuid import UUID
 
-from sqlalchemy import (
-    BIGINT,
-    JSON,
-    DateTime,
-    ForeignKey,
-    Integer,
-    Numeric,
-    String,
-    UniqueConstraint,
-)
+from sqlalchemy import BIGINT, JSON, DateTime, ForeignKey, Integer, Numeric, String, UniqueConstraint
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
-
-from app.domain.order import (
-    OrderStatus,
-    PaymentAttemptStatus,
-    PaymentStatus,
-)
 
 
 class Base(DeclarativeBase):
@@ -32,65 +19,50 @@ class ProductModel(Base):
     __tablename__ = "products"
 
     id: Mapped[UUID] = mapped_column(primary_key=True)
-    product_code: Mapped[str] = mapped_column(String(64), unique=True, index=True)
+    product_code: Mapped[str] = mapped_column(String(32), unique=True, index=True)
     name: Mapped[str] = mapped_column(String(255))
+    category: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    tags: Mapped[list[str]] = mapped_column(JSON, default=list)
     price: Mapped[Decimal] = mapped_column(Numeric(20, 0))
-    currency: Mapped[str] = mapped_column(String(3))
-    category_id: Mapped[UUID | None] = mapped_column(ForeignKey("categories.id"), nullable=True)
+    currency: Mapped[str] = mapped_column(String(3), default="IRR")
     status: Mapped[str] = mapped_column(String(32), index=True)
+    description: Mapped[str | None] = mapped_column(String(4000), nullable=True)
+    created_by: Mapped[int | None] = mapped_column(Integer, nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
 
-    category: Mapped[CategoryModel | None] = relationship(back_populates="products")
     files: Mapped[list[ProductFileModel]] = relationship(
-        back_populates="product", cascade="all, delete-orphan"
+        back_populates="product",
+        cascade="all, delete-orphan",
+        order_by="ProductFileModel.ordering",
     )
-    tags: Mapped[list[ProductTagModel]] = relationship(
-        back_populates="product", cascade="all, delete-orphan"
-    )
-
-
-class CategoryModel(Base):
-    __tablename__ = "categories"
-
-    id: Mapped[UUID] = mapped_column(primary_key=True)
-    name: Mapped[str] = mapped_column(String(255), unique=True)
-
-    products: Mapped[list[ProductModel]] = relationship(back_populates="category")
 
 
 class ProductFileModel(Base):
     __tablename__ = "product_files"
+    __table_args__ = (
+        UniqueConstraint(
+            "telegram_chat_id",
+            "telegram_message_id",
+            name="uq_product_file_telegram_message",
+        ),
+    )
 
     id: Mapped[UUID] = mapped_column(primary_key=True)
-    product_id: Mapped[UUID] = mapped_column(ForeignKey("products.id", ondelete="CASCADE"))
-    telegram_file_id: Mapped[str] = mapped_column(String(255))
-    role: Mapped[str] = mapped_column(String(32))
+    product_id: Mapped[UUID] = mapped_column(
+        ForeignKey("products.id", ondelete="CASCADE"), index=True
+    )
+    telegram_file_id: Mapped[str | None] = mapped_column(String(512), nullable=True)
+    telegram_message_id: Mapped[int] = mapped_column(Integer)
+    telegram_chat_id: Mapped[int] = mapped_column(Integer)
     file_type: Mapped[str] = mapped_column(String(32))
-    filename: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    role: Mapped[str] = mapped_column(String(32), index=True)
+    original_filename: Mapped[str | None] = mapped_column(String(1024), nullable=True)
+    mime_type: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    size: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    ordering: Mapped[int] = mapped_column(Integer, default=0)
 
     product: Mapped[ProductModel] = relationship(back_populates="files")
-
-
-class ProductTagModel(Base):
-    __tablename__ = "product_tags"
-    __table_args__ = (UniqueConstraint("product_id", "tag_id"),)
-
-    id: Mapped[UUID] = mapped_column(primary_key=True)
-    product_id: Mapped[UUID] = mapped_column(ForeignKey("products.id", ondelete="CASCADE"))
-    tag_id: Mapped[UUID] = mapped_column(ForeignKey("tags.id", ondelete="CASCADE"))
-
-    product: Mapped[ProductModel] = relationship(back_populates="tags")
-    tag: Mapped[TagModel] = relationship(back_populates="products")
-
-
-class TagModel(Base):
-    __tablename__ = "tags"
-
-    id: Mapped[UUID] = mapped_column(primary_key=True)
-    name: Mapped[str] = mapped_column(String(255), unique=True)
-
-    products: Mapped[list[ProductTagModel]] = relationship(back_populates="tag")
 
 
 class ProductIntakeModel(Base):
@@ -110,38 +82,45 @@ class ProductIntakeModel(Base):
 
 class StorePublicationModel(Base):
     __tablename__ = "store_publications"
-    __table_args__ = (UniqueConstraint("product_id", "channel_id"),)
+    __table_args__ = (UniqueConstraint("product_id", name="uq_store_publication_product"),)
 
     id: Mapped[UUID] = mapped_column(primary_key=True)
     product_id: Mapped[UUID] = mapped_column(ForeignKey("products.id", ondelete="CASCADE"))
-    channel_id: Mapped[int] = mapped_column(BIGINT)
-    media_message_ids: Mapped[list[int]] = mapped_column(JSON)
-    cta_message_id: Mapped[int] = mapped_column(Integer)
+    channel_id: Mapped[int] = mapped_column(Integer)
+    media_message_ids: Mapped[list[int]] = mapped_column(JSON, default=list)
+    cta_message_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    state: Mapped[str] = mapped_column(String(32), default="published", index=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
 
 
 class AuditLogModel(Base):
     __tablename__ = "audit_logs"
 
     id: Mapped[UUID] = mapped_column(primary_key=True)
-    actor_id: Mapped[int] = mapped_column(BIGINT)
+    actor: Mapped[int] = mapped_column(Integer, index=True)
     action: Mapped[str] = mapped_column(String(64), index=True)
     entity: Mapped[str] = mapped_column(String(64), index=True)
-    entity_id: Mapped[UUID] = mapped_column()
-    timestamp: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    entity_id: Mapped[str] = mapped_column(String(64), index=True)
+    timestamp: Mapped[datetime] = mapped_column(DateTime(timezone=True), index=True)
     metadata_json: Mapped[dict[str, Any]] = mapped_column("metadata", JSON, default=dict)
 
 
 class OrderModel(Base):
     __tablename__ = "orders"
-    __table_args__ = (UniqueConstraint("idempotency_key", name="uq_orders_idempotency_key"),)
+    __table_args__ = (
+        UniqueConstraint("order_code", name="uq_orders_order_code"),
+        UniqueConstraint("idempotency_key", name="uq_orders_idempotency_key"),
+    )
 
     id: Mapped[UUID] = mapped_column(primary_key=True)
     customer_telegram_id: Mapped[int] = mapped_column(BIGINT, index=True)
-    status: Mapped[str] = mapped_column(String(32), index=True)
-    total_amount: Mapped[Decimal] = mapped_column(Numeric(20, 0))
+    order_code: Mapped[str] = mapped_column(String(64))
     currency: Mapped[str] = mapped_column(String(3))
+    total_amount: Mapped[Decimal] = mapped_column(Numeric(20, 0))
+    status: Mapped[str] = mapped_column(String(32), index=True)
+    expires_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True, index=True)
     idempotency_key: Mapped[str] = mapped_column(String(255))
-    expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
 
@@ -159,7 +138,6 @@ class OrderItemModel(Base):
     id: Mapped[UUID] = mapped_column(primary_key=True)
     order_id: Mapped[UUID] = mapped_column(ForeignKey("orders.id", ondelete="CASCADE"))
     product_id: Mapped[UUID] = mapped_column()
-    product_code: Mapped[str] = mapped_column(String(64))
     product_name: Mapped[str] = mapped_column(String(255))
     unit_price: Mapped[Decimal] = mapped_column(Numeric(20, 0))
     currency: Mapped[str] = mapped_column(String(3))
@@ -170,7 +148,10 @@ class OrderItemModel(Base):
 
 class PaymentModel(Base):
     __tablename__ = "payments"
-    __table_args__ = (UniqueConstraint("idempotency_key", name="uq_payments_idempotency_key"),)
+    __table_args__ = (
+        UniqueConstraint("order_id", name="uq_payments_order_id"),
+        UniqueConstraint("provider", "provider_reference", name="uq_payments_provider_reference"),
+    )
 
     id: Mapped[UUID] = mapped_column(primary_key=True)
     order_id: Mapped[UUID] = mapped_column(ForeignKey("orders.id", ondelete="CASCADE"), index=True)
@@ -178,10 +159,9 @@ class PaymentModel(Base):
     amount: Mapped[Decimal] = mapped_column(Numeric(20, 0))
     currency: Mapped[str] = mapped_column(String(3))
     status: Mapped[str] = mapped_column(String(32), index=True)
-    authority: Mapped[str | None] = mapped_column(String(255), nullable=True, index=True)
-    idempotency_key: Mapped[str] = mapped_column(String(255))
+    provider_reference: Mapped[str | None] = mapped_column(String(255), nullable=True, index=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
-    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    verified_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
 
     order: Mapped[OrderModel] = relationship(back_populates="payments")
     attempts: Mapped[list[PaymentAttemptModel]] = relationship(
@@ -217,7 +197,6 @@ class PaymentAttemptModel(Base):
 __all__ = [
     "AuditLogModel",
     "Base",
-    "CategoryModel",
     "OrderItemModel",
     "OrderModel",
     "PaymentAttemptModel",
@@ -225,7 +204,5 @@ __all__ = [
     "ProductFileModel",
     "ProductIntakeModel",
     "ProductModel",
-    "ProductTagModel",
     "StorePublicationModel",
-    "TagModel",
 ]
