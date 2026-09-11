@@ -146,7 +146,7 @@ class Order:
 
     @property
     def total_amount(self) -> Decimal:
-        return sum((item.line_total for item in self.items), Decimal("0"))
+        return sum((item.line_total for item in self.items), Decimal(0))
 
     def start_payment(self, payment: Payment) -> None:
         if self.is_expired():
