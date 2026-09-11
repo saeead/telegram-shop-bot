@@ -68,9 +68,11 @@ class FakeProvider:
         self.verify_calls = 0
         self.fail_create = False
         self.fail_verify = False
+        self.last_request: PaymentRequest | None = None
 
     async def create_payment(self, request: PaymentRequest):
         self.create_calls += 1
+        self.last_request = request
         if self.fail_create:
             raise TimeoutError("provider timeout")
         return PaymentRequestResult("fake", "AUTH-1", "https://pay.test/AUTH-1", {})
@@ -131,16 +133,18 @@ async def test_order_creation_is_idempotent_and_snapshots_price():
 
 
 @pytest.mark.asyncio
-async def test_payment_creation_is_idempotent():
+async def test_payment_creation_is_idempotent_and_binds_callback_to_order():
     product = make_product()
     provider = FakeProvider()
     repository = FakeCommerceRepository()
     service = CommerceService(FakeProducts(product), repository, {"fake": provider})
     order = await service.create_order(100, product.id, 1, "payment-key")
-    first = await service.create_payment(order.id, "fake", "https://shop.test/callback")
+    first = await service.create_payment(order.id, "fake", "https://shop.test/callback?source=telegram")
     second = await service.create_payment(order.id, "fake", "https://shop.test/callback")
     assert first.authority == second.authority == "AUTH-1"
     assert provider.create_calls == 1
+    assert provider.last_request is not None
+    assert f"order_id={order.id}" in provider.last_request.callback_url
 
 
 @pytest.mark.asyncio
