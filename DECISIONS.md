@@ -13,49 +13,79 @@ Business logic must not depend directly on aiogram, Zarinpal SDKs, crypto SDKs, 
 ## ADR-003 — Telegram is the product-file storage layer
 **Status:** accepted
 
-Normal product file bytes are not persisted by the application server. Telegram channel message/file references are persisted in PostgreSQL. Archive and Backup provide operational redundancy.
+Normal product file bytes are not persisted by the application server. Telegram channel message/file references are persisted in PostgreSQL.
 
 ## ADR-004 — Product is the aggregate, files are children
 **Status:** accepted
 
-A product may contain one or many previews and one or many main files. File classification is represented explicitly instead of assuming a one-preview/one-main-file relationship.
+A product may contain one or many previews and one or many main files. File classification is represented explicitly.
 
 ## ADR-005 — Payment is idempotent
 **Status:** accepted
 
-Repeated provider callbacks must not create duplicate successful payments, orders, or deliveries.
+Repeated provider callbacks must not create duplicate successful payments, orders, or deliveries. Unique idempotency/provider-reference constraints and application-level replay checks enforce this boundary.
 
 ## ADR-006 — Initialization precedes feature implementation
 **Status:** accepted
 
-Phase 1 establishes a runnable baseline and verification harness before feature implementation. This reduces false progress and makes later agent sessions reproducible.
+Phase 1 establishes a runnable baseline and verification harness before feature implementation.
 
 ## ADR-007 — Async persistence foundation
 **Status:** accepted
 
-The application uses SQLAlchemy's asyncio extension with `asyncpg` for PostgreSQL. Alembic runs migrations through SQLAlchemy's async engine bridge. SQLAlchemy's asyncio extra is declared explicitly so the required async runtime support is installed with the application dependencies.
+The application uses SQLAlchemy asyncio with asyncpg for PostgreSQL and Alembic for migrations.
 
 ## ADR-008 — Public Store publishes previews, never main files
 **Status:** accepted
 
-The public Store channel may publish preview media and product presentation data, but main downloadable product files remain private and are referenced only through the commerce/delivery workflow.
+The public Store channel may publish preview media and product presentation data, but main downloadable files remain private.
 
 ## ADR-009 — Presentation formatting stays outside the domain
 **Status:** accepted
 
-Telegram captions, inline keyboards, media-group composition, callback payloads, and navigation presentation are adapter/application concerns. The Product domain remains independent of Telegram and presentation formatting.
+Telegram captions, keyboards, media groups, callback payloads, and navigation are adapter/application concerns.
 
 ## ADR-010 — Publication is idempotent
 **Status:** accepted
 
-Store publication and republish operations must be safe to retry. A stable publication identity is used to prevent duplicate public Store messages while allowing state reconciliation.
+Store publication and republish operations must be safe to retry without duplicate public Store messages.
 
 ## ADR-011 — Admin authorization is server-side
 **Status:** accepted
 
-Every admin command and callback is authorized from trusted server-side actor identity. Callback data is treated as untrusted input and cannot grant administrative privileges.
+Every admin command and callback is authorized from trusted server-side actor identity.
 
 ## ADR-012 — Historical products are retained
 **Status:** accepted
 
-Hide/archive operations change visibility/status and audit state without deleting historical product records. This preserves commerce and operational history for later phases.
+Hide/archive operations change visibility/status and audit state without deleting historical product records.
+
+## ADR-013 — Orders snapshot commercial terms
+**Status:** accepted
+
+Order items store the product name, unit price, currency, and quantity used at purchase time. Later Product edits cannot mutate an existing order's price.
+
+## ADR-014 — Payment providers are ports
+**Status:** accepted
+
+Order/payment application logic depends only on `PaymentProvider`. Zarinpal and future crypto providers are adapters. No provider-specific SDK types or semantics are allowed in the Order domain.
+
+## ADR-015 — Provider verification is the source of payment truth
+**Status:** accepted
+
+A browser callback is untrusted input. `Status=OK` only permits verification; an order becomes paid only after the provider adapter validates the verification response and the amount/provider/order/authority checks succeed.
+
+## ADR-016 — Payment attempts are immutable ledger records
+**Status:** accepted
+
+Each provider attempt records provider, reference, amount, status, timestamps, idempotency key, and safe metadata. Credentials, merchant secrets, card data, and other payment secrets are never persisted.
+
+## ADR-017 — Delivery is downstream of payment
+**Status:** accepted
+
+Phase 4 marks an order paid but does not call or implement delivery. Fulfillment is a separate Phase 5 concern and must consume the paid state idempotently.
+
+## ADR-018 — Crypto provider selection is deferred
+**Status:** accepted
+
+Phase 4 defines only a crypto-provider abstraction. A concrete gateway is intentionally deferred until a separate architecture decision selects the provider and settlement model.
