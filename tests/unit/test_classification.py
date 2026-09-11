@@ -1,4 +1,9 @@
-from app.catalog.classification import IncomingFile, IncomingMediaKind, classify_batch, classify_file
+from app.catalog.classification import (
+    IncomingFile,
+    IncomingMediaKind,
+    classify_batch,
+    classify_file,
+)
 from app.domain.product import ProductFileRole, ProductFileType
 
 
