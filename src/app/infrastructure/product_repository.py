@@ -1,15 +1,16 @@
-"""SQLAlchemy implementation of the Product repository port."""
+"""SQLAlchemy implementation of Product and Store repositories."""
 
 from __future__ import annotations
 
 from datetime import UTC, datetime
-from uuid import UUID
+from uuid import UUID, uuid4
 
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from app.application.catalog_ports import ProductRepository
+from app.application.store_ports import AuditEntry, StorePublication, StoreRepositoryPort
 from app.domain.intake import ProductIntake, ProductIntakeState
 from app.domain.product import (
     Category,
@@ -20,10 +21,16 @@ from app.domain.product import (
     ProductStatus,
     Tag,
 )
-from app.infrastructure.models import ProductFileModel, ProductIntakeModel, ProductModel
+from app.infrastructure.models import (
+    AuditLogModel,
+    ProductFileModel,
+    ProductIntakeModel,
+    ProductModel,
+    StorePublicationModel,
+)
 
 
-class SqlAlchemyProductRepository(ProductRepository):
+class SqlAlchemyProductRepository(ProductRepository, StoreRepositoryPort):
     def __init__(self, session: AsyncSession) -> None:
         self._session = session
 
@@ -126,8 +133,98 @@ class SqlAlchemyProductRepository(ProductRepository):
             error_message=model.error_message,
         )
 
+    async def list_categories(self) -> list[str]:
+        result = await self._session.execute(
+            select(ProductModel.category)
+            .where(ProductModel.category.is_not(None))
+            .distinct()
+            .order_by(ProductModel.category)
+        )
+        return [str(value) for value in result.scalars().all() if value]
+
+    async def list_tags(self) -> list[str]:
+        products = await self._published_or_ready_products()
+        return sorted({tag for product in products for tag in product.tags for tag in [tag.name]})
+
+    async def list_published(
+        self, category: str | None = None, tag: str | None = None
+    ) -> list[Product]:
+        query = (
+            select(ProductModel)
+            .options(selectinload(ProductModel.files))
+            .where(ProductModel.status == ProductStatus.PUBLISHED.value)
+            .order_by(ProductModel.created_at.desc())
+        )
+        if category:
+            query = query.where(func.lower(ProductModel.category) == category.strip().lower())
+        result = await self._session.execute(query)
+        products = [_to_domain(model) for model in result.scalars().unique().all()]
+        if tag:
+            wanted = tag.strip().lower()
+            products = [product for product in products if any(item.name.lower() == wanted for item in product.tags)]
+        return products
+
+    async def get_publication(self, product_id: UUID) -> StorePublication | None:
+        model = await self._session.scalar(
+            select(StorePublicationModel).where(StorePublicationModel.product_id == product_id)
+        )
+        if model is None:
+            return None
+        return StorePublication(
+            product_id=model.product_id,
+            channel_id=model.channel_id,
+            media_message_ids=tuple(int(item) for item in model.media_message_ids),
+            cta_message_id=model.cta_message_id,
+        )
+
+    async def save_publication(self, publication: StorePublication) -> None:
+        model = await self._session.scalar(
+            select(StorePublicationModel).where(StorePublicationModel.product_id == publication.product_id)
+        )
+        now = datetime.now(UTC)
+        if model is None:
+            self._session.add(
+                StorePublicationModel(
+                    id=uuid4(),
+                    product_id=publication.product_id,
+                    channel_id=publication.channel_id,
+                    media_message_ids=list(publication.media_message_ids),
+                    cta_message_id=publication.cta_message_id,
+                    state="published",
+                    created_at=now,
+                    updated_at=now,
+                )
+            )
+            return
+        model.channel_id = publication.channel_id
+        model.media_message_ids = list(publication.media_message_ids)
+        model.cta_message_id = publication.cta_message_id
+        model.state = "published"
+        model.updated_at = now
+
+    async def save_audit(self, entry: AuditEntry) -> None:
+        self._session.add(
+            AuditLogModel(
+                id=uuid4(),
+                actor=entry.actor,
+                action=entry.action,
+                entity=entry.entity,
+                entity_id=entry.entity_id,
+                timestamp=entry.timestamp,
+                metadata_json=entry.metadata,
+            )
+        )
+
     async def commit(self) -> None:
         await self._session.commit()
+
+    async def _published_or_ready_products(self) -> list[Product]:
+        result = await self._session.execute(
+            select(ProductModel)
+            .options(selectinload(ProductModel.files))
+            .where(ProductModel.status.in_([ProductStatus.PUBLISHED.value, ProductStatus.READY.value]))
+        )
+        return [_to_domain(model) for model in result.scalars().unique().all()]
 
 
 def _to_domain(model: ProductModel) -> Product:
