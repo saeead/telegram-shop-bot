@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-from collections.abc import Sequence
 from datetime import UTC, datetime
 from uuid import UUID, uuid4
 
@@ -11,7 +10,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from app.application.catalog_ports import ProductRepository
-from app.application.store_ports import AuditEntry, StoreRepositoryPort, StorePublication
+from app.application.store_ports import AuditEntry, StorePublication, StoreRepositoryPort
 from app.domain.intake import ProductIntake, ProductIntakeState
 from app.domain.product import (
     Category,
