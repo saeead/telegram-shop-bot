@@ -55,7 +55,9 @@ def create_intake_router(service: ProductIntakeService, settings: Settings) -> R
         intake = await service.receive_batch(message.chat.id, files)
         await state.update_data(intake_id=str(intake.id))
         await state.set_state(IntakeForm.NAME)
-        await message.answer(f"Product code: {await _product_code(service, intake.id)}\nEnter product name:")
+        await message.answer(
+            f"Product code: {await _product_code(service, intake.id)}\nEnter product name:"
+        )
 
     @router.message(IntakeForm.RECEIVING)
     async def receive_file(message: Message, state: FSMContext) -> None:
