@@ -6,6 +6,7 @@ from sqlalchemy import Connection, pool
 from sqlalchemy.ext.asyncio import async_engine_from_config
 
 from app.config.settings import get_settings
+from app.infrastructure.models import Base
 
 config = context.config
 if config.config_file_name is not None:
@@ -13,7 +14,7 @@ if config.config_file_name is not None:
 
 
 def do_run_migrations(connection: Connection) -> None:
-    context.configure(connection=connection, target_metadata=None)
+    context.configure(connection=connection, target_metadata=Base.metadata)
     with context.begin_transaction():
         context.run_migrations()
 
@@ -37,7 +38,7 @@ def run_migrations_offline() -> None:
         url=get_settings().database_url,
         literal_binds=True,
         dialect_opts={"paramstyle": "named"},
-        target_metadata=None,
+        target_metadata=Base.metadata,
     )
     with context.begin_transaction():
         context.run_migrations()
