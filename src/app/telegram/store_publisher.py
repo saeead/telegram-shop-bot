@@ -33,9 +33,7 @@ class TelegramStorePublisher:
             else:
                 raise ValueError("only image/video previews may be published")
 
-        messages = await self._bot.send_media_group(
-            chat_id=channel_id, media=media_group.build()
-        )
+        messages = await self._bot.send_media_group(chat_id=channel_id, media=media_group.build())
         cta = await self._bot.send_message(
             chat_id=channel_id,
             text="Ready to buy?",
