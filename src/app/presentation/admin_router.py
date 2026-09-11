@@ -63,7 +63,9 @@ def create_admin_router(service: StoreService, settings: Settings) -> Router:
                         ),
                     )
                 return
-            await callback.answer(f"{data.value.title()} management is available as a placeholder in this phase.")
+            await callback.answer(
+                f"{data.value.title()} management is available as a placeholder in this phase."
+            )
             return
         if data.action == "admin_product":
             await _show_product(callback, service, actor, UUID(data.value))
@@ -131,7 +133,9 @@ def create_admin_router(service: StoreService, settings: Settings) -> Router:
             elif field == "category":
                 changes = ProductEdit(category=value)
             elif field == "tags":
-                changes = ProductEdit(tags=tuple(tag.strip() for tag in value.split(",") if tag.strip()))
+                changes = ProductEdit(
+                    tags=tuple(tag.strip() for tag in value.split(",") if tag.strip())
+                )
             else:
                 raise ValueError("unsupported edit field")
             await service.edit(actor, UUID(str(data["product_id"])), changes)
@@ -164,13 +168,46 @@ async def _show_product(
     product = await service.details(actor, product_id)
     keyboard = InlineKeyboardMarkup(
         inline_keyboard=[
-            [InlineKeyboardButton(text="Edit price", callback_data=product_callback("product_edit_price", product.id))],
-            [InlineKeyboardButton(text="Edit name", callback_data=product_callback("product_edit_name", product.id))],
-            [InlineKeyboardButton(text="Edit category", callback_data=product_callback("product_edit_category", product.id))],
-            [InlineKeyboardButton(text="Retag", callback_data=product_callback("product_edit_tags", product.id))],
-            [InlineKeyboardButton(text="Hide", callback_data=product_callback("product_hide", product.id))],
-            [InlineKeyboardButton(text="Republish", callback_data=product_callback("product_republish", product.id))],
-            [InlineKeyboardButton(text="View details", callback_data=product_callback("product_details", product.id))],
+            [
+                InlineKeyboardButton(
+                    text="Edit price",
+                    callback_data=product_callback("product_edit_price", product.id),
+                )
+            ],
+            [
+                InlineKeyboardButton(
+                    text="Edit name",
+                    callback_data=product_callback("product_edit_name", product.id),
+                )
+            ],
+            [
+                InlineKeyboardButton(
+                    text="Edit category",
+                    callback_data=product_callback("product_edit_category", product.id),
+                )
+            ],
+            [
+                InlineKeyboardButton(
+                    text="Retag", callback_data=product_callback("product_edit_tags", product.id)
+                )
+            ],
+            [
+                InlineKeyboardButton(
+                    text="Hide", callback_data=product_callback("product_hide", product.id)
+                )
+            ],
+            [
+                InlineKeyboardButton(
+                    text="Republish",
+                    callback_data=product_callback("product_republish", product.id),
+                )
+            ],
+            [
+                InlineKeyboardButton(
+                    text="View details",
+                    callback_data=product_callback("product_details", product.id),
+                )
+            ],
         ]
     )
     if callback.message:
