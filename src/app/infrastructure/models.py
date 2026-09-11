@@ -7,7 +7,7 @@ from decimal import Decimal
 from typing import Any
 from uuid import UUID
 
-from sqlalchemy import JSON, DateTime, ForeignKey, Integer, Numeric, String, UniqueConstraint
+from sqlalchemy import BIGINT, JSON, DateTime, ForeignKey, Integer, Numeric, String, UniqueConstraint
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 
 
@@ -114,9 +114,10 @@ class OrderModel(Base):
     )
 
     id: Mapped[UUID] = mapped_column(primary_key=True)
-    customer_telegram_id: Mapped[int] = mapped_column(Integer, index=True)
+    customer_telegram_id: Mapped[int] = mapped_column(BIGINT, index=True)
     order_code: Mapped[str] = mapped_column(String(64))
     currency: Mapped[str] = mapped_column(String(3))
+    total_amount: Mapped[Decimal] = mapped_column(Numeric(20, 0))
     status: Mapped[str] = mapped_column(String(32), index=True)
     expires_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), index=True)
     idempotency_key: Mapped[str] = mapped_column(String(255))
