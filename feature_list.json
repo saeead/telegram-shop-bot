@@ -17,14 +17,14 @@
       "area": "foundation",
       "title": "Runnable Python application and configuration",
       "user_visible_behavior": "The application starts with validated configuration and exits cleanly when required configuration is missing.",
-      "status": "in_progress",
+      "status": "blocked",
       "verification": [
         "Run init.sh",
         "Run pytest",
         "Start python -m app.main with safe local configuration"
       ],
-      "evidence": "Implementation verified with 3 passing pytest tests and compileall. Direct startup path is implemented. Full init.sh dependency bootstrap remains environment-blocked here because external package index/network access is unavailable; must be re-verified in the developer environment.",
-      "notes": "Implementation complete; truthful passing status requires bootstrap verification in an environment with dependency installation access."
+      "evidence": "Previous scaffold evidence was 3 passing pytest tests and compileall. After Phase 1 infrastructure changes, this feature requires re-verification. Current execution environment cannot install dependencies from the external package index.",
+      "notes": "Implementation is present; do not mark passing until init/bootstrap and startup are rerun successfully."
     },
     {
       "id": "FND-002",
@@ -32,14 +32,14 @@
       "area": "foundation",
       "title": "PostgreSQL database layer and migrations",
       "user_visible_behavior": "The app can connect to PostgreSQL and apply/revert schema migrations safely.",
-      "status": "not_started",
+      "status": "blocked",
       "verification": [
         "Start PostgreSQL",
         "Run migration upgrade",
         "Run database integration tests"
       ],
-      "evidence": "",
-      "notes": "SQLAlchemy 2.x + Alembic."
+      "evidence": "Async SQLAlchemy engine/session infrastructure, health check, Alembic async environment, and an empty baseline migration are implemented. Docker is unavailable in the current execution environment, so connectivity and migration execution are not claimed as verified.",
+      "notes": "No Product, Order, Payment, Customer, or other business tables are created in Phase 1."
     },
     {
       "id": "FND-003",
@@ -47,14 +47,14 @@
       "area": "foundation",
       "title": "Redis state infrastructure",
       "user_visible_behavior": "The app can use Redis for transient state and locking primitives.",
-      "status": "not_started",
+      "status": "blocked",
       "verification": [
         "Start Redis",
         "Run Redis integration tests",
         "Verify clean restart behavior"
       ],
-      "evidence": "",
-      "notes": "FSM/storage strategy is finalized in Phase 1."
+      "evidence": "Application CachePort plus Redis adapter with TTL, lock, cache, and idempotency semantics are implemented. Redis runtime verification is blocked because Docker is unavailable and dependencies cannot be installed in the current environment.",
+      "notes": "Domain contains no Redis dependency."
     },
     {
       "id": "FND-004",
@@ -62,14 +62,15 @@
       "area": "harness",
       "title": "Standard verification and clean-state checks",
       "user_visible_behavior": "A fresh agent can run one standard check command and understand current project state.",
-      "status": "not_started",
+      "status": "blocked",
       "verification": [
         "Run scripts/check.sh",
         "Validate feature_list.json",
-        "Run clean-state checklist"
+        "Run clean-state checklist",
+        "Run CI with PostgreSQL and Redis services"
       ],
-      "evidence": "",
-      "notes": "Must prevent false passing claims."
+      "evidence": "scripts/check.sh now covers pytest, Ruff, format, mypy, compileall, and feature-state validation. CI provisions PostgreSQL/Redis and runs Alembic plus the standard checks. No execution evidence is claimed from this environment.",
+      "notes": "Passing requires successful reproducible execution, not merely the presence of scripts."
     },
     {
       "id": "PRD-001",
