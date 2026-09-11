@@ -6,7 +6,6 @@ results. No ZarinPal types leak into the order domain.
 
 from __future__ import annotations
 
-from decimal import Decimal
 from typing import Any
 
 import httpx
@@ -17,6 +16,7 @@ from app.application.commerce_ports import (
     PaymentVerificationRequest,
     PaymentVerificationResult,
 )
+from app.domain.order import Payment
 
 
 class ZarinpalError(RuntimeError):
@@ -91,7 +91,11 @@ class ZarinpalProvider:
                 already_verified=False,
                 raw_metadata={"verify_code": code, "message": self._optional_str(data, "message")},
             )
-        ref_id = self._required_str(data, "ref_id") if code == 100 else self._optional_str(data, "ref_id")
+        ref_id = (
+            self._required_str(data, "ref_id")
+            if code == 100
+            else self._optional_str(data, "ref_id")
+        )
         return PaymentVerificationResult(
             provider=self.name,
             success=True,
@@ -100,7 +104,7 @@ class ZarinpalProvider:
             raw_metadata={"verify_code": code, "message": self._optional_str(data, "message")},
         )
 
-    async def refund(self, payment: Any) -> str:
+    async def refund(self, payment: Payment) -> str:
         raise NotImplementedError("ZarinPal refund is intentionally deferred from Phase 4")
 
     async def _post(self, path: str, payload: dict[str, object]) -> dict[str, Any]:
