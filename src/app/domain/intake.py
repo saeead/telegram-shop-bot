@@ -19,15 +19,29 @@ class ProductIntakeState(StrEnum):
 
 
 _ALLOWED_TRANSITIONS: dict[ProductIntakeState, frozenset[ProductIntakeState]] = {
-    ProductIntakeState.RECEIVING: frozenset({ProductIntakeState.CLASSIFYING, ProductIntakeState.CANCELLED}),
+    ProductIntakeState.RECEIVING: frozenset(
+        {ProductIntakeState.CLASSIFYING, ProductIntakeState.CANCELLED}
+    ),
     ProductIntakeState.CLASSIFYING: frozenset(
-        {ProductIntakeState.WAITING_FOR_METADATA, ProductIntakeState.FAILED, ProductIntakeState.CANCELLED}
+        {
+            ProductIntakeState.WAITING_FOR_METADATA,
+            ProductIntakeState.FAILED,
+            ProductIntakeState.CANCELLED,
+        }
     ),
     ProductIntakeState.WAITING_FOR_METADATA: frozenset(
-        {ProductIntakeState.WAITING_FOR_ADMIN_CONFIRMATION, ProductIntakeState.FAILED, ProductIntakeState.CANCELLED}
+        {
+            ProductIntakeState.WAITING_FOR_ADMIN_CONFIRMATION,
+            ProductIntakeState.FAILED,
+            ProductIntakeState.CANCELLED,
+        }
     ),
     ProductIntakeState.WAITING_FOR_ADMIN_CONFIRMATION: frozenset(
-        {ProductIntakeState.PUBLISHING, ProductIntakeState.CANCELLED, ProductIntakeState.FAILED}
+        {
+            ProductIntakeState.PUBLISHING,
+            ProductIntakeState.CANCELLED,
+            ProductIntakeState.FAILED,
+        }
     ),
     ProductIntakeState.PUBLISHING: frozenset(
         {ProductIntakeState.PUBLISHED, ProductIntakeState.FAILED}
