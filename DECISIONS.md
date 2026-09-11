@@ -34,3 +34,28 @@ Phase 1 establishes a runnable baseline and verification harness before feature 
 **Status:** accepted
 
 The application uses SQLAlchemy's asyncio extension with `asyncpg` for PostgreSQL. Alembic runs migrations through SQLAlchemy's async engine bridge. SQLAlchemy's asyncio extra is declared explicitly so the required async runtime support is installed with the application dependencies.
+
+## ADR-008 — Public Store publishes previews, never main files
+**Status:** accepted
+
+The public Store channel may publish preview media and product presentation data, but main downloadable product files remain private and are referenced only through the commerce/delivery workflow.
+
+## ADR-009 — Presentation formatting stays outside the domain
+**Status:** accepted
+
+Telegram captions, inline keyboards, media-group composition, callback payloads, and navigation presentation are adapter/application concerns. The Product domain remains independent of Telegram and presentation formatting.
+
+## ADR-010 — Publication is idempotent
+**Status:** accepted
+
+Store publication and republish operations must be safe to retry. A stable publication identity is used to prevent duplicate public Store messages while allowing state reconciliation.
+
+## ADR-011 — Admin authorization is server-side
+**Status:** accepted
+
+Every admin command and callback is authorized from trusted server-side actor identity. Callback data is treated as untrusted input and cannot grant administrative privileges.
+
+## ADR-012 — Historical products are retained
+**Status:** accepted
+
+Hide/archive operations change visibility/status and audit state without deleting historical product records. This preserves commerce and operational history for later phases.
