@@ -2,12 +2,14 @@
 
 from __future__ import annotations
 
+from typing import Any
+
 from aiogram import F, Router
 from aiogram.filters import CommandStart
 from aiogram.types import CallbackQuery, InlineKeyboardButton, InlineKeyboardMarkup, Message
 
 from app.application.store_service import StoreService
-from app.telegram.callbacks import parse_callback
+from app.telegram.callbacks import encode_callback, parse_callback
 
 
 def create_store_router(service: StoreService) -> Router:
@@ -59,16 +61,18 @@ def _home_keyboard() -> InlineKeyboardMarkup:
 
 async def _answer_categories(callback: CallbackQuery, categories: list[str]) -> None:
     buttons = [
-        [InlineKeyboardButton(text=category, callback_data=f"v1:category:{category}")]
+        [InlineKeyboardButton(text=category, callback_data=encode_callback("category", category))]
         for category in categories
     ]
     buttons.append([InlineKeyboardButton(text="Home", callback_data="v1:products:home")])
     if callback.message:
-        await callback.message.answer("Categories", reply_markup=InlineKeyboardMarkup(inline_keyboard=buttons))
+        await callback.message.answer(
+            "Categories", reply_markup=InlineKeyboardMarkup(inline_keyboard=buttons)
+        )
     await callback.answer()
 
 
-async def _answer_products(callback: CallbackQuery, products) -> None:
+async def _answer_products(callback: CallbackQuery, products: list[Any]) -> None:
     if callback.message:
         if not products:
             await callback.message.answer("No products found.")
