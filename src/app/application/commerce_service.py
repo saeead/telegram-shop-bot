@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 from datetime import UTC, datetime
-from decimal import Decimal
 from uuid import UUID
 
 from app.application.catalog_ports import ProductRepository
@@ -11,8 +10,8 @@ from app.application.commerce_ports import (
     CommerceRepositoryPort,
     PaymentProvider,
     PaymentRequest,
-    PaymentVerificationRequest,
     PaymentRequestResult,
+    PaymentVerificationRequest,
 )
 from app.domain.order import (
     Order,
@@ -82,7 +81,11 @@ class CommerceService:
         callback_url: str,
     ) -> PaymentRequestResult:
         order = await self._require_order(order_id)
-        self._expire_if_needed(order)
+        if order.is_expired():
+            order.expire()
+            await self._repository.save_order(order)
+            await self._repository.commit()
+            raise CommerceError("order is not payable")
         if order.status is OrderStatus.PAID:
             raise CommerceError("order is already paid")
         if order.status in {OrderStatus.CANCELLED, OrderStatus.EXPIRED}:
@@ -120,7 +123,7 @@ class CommerceService:
             provider=provider.name,
             amount=payment.amount,
             currency=payment.currency,
-            idempotency_key=f"{order.id}:{provider.name}",
+            idempotency_key=f"{order.id}:{provider.name}:{len(payment.attempts) + 1}",
         )
         payment.attempts.append(attempt)
         await self._repository.save_payment(payment)
@@ -250,7 +253,8 @@ class CommerceService:
 
     async def expire_order(self, order_id: UUID) -> Order:
         order = await self._require_order(order_id)
-        self._expire_if_needed(order)
+        if order.is_expired():
+            order.expire()
         await self._repository.save_order(order)
         await self._repository.commit()
         return order
@@ -266,8 +270,3 @@ class CommerceService:
             return self._providers[name]
         except KeyError as exc:
             raise CommerceError("unsupported payment provider") from exc
-
-    @staticmethod
-    def _expire_if_needed(order: Order) -> None:
-        if order.is_expired():
-            order.expire()
