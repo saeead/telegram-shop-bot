@@ -23,13 +23,13 @@ class TelegramStorePublisher:
         previews = product.previews
         if not previews:
             raise ValueError("published product must contain at least one preview")
-        media = []
+        media: list[InputMediaPhoto | InputMediaVideo] = []
         for index, preview in enumerate(previews):
             file_id = preview.file.telegram_file_id
             if not file_id:
                 raise ValueError("preview is missing Telegram file id")
             if preview.file.file_type is ProductFileType.IMAGE:
-                item = InputMediaPhoto(media=file_id)
+                item: InputMediaPhoto | InputMediaVideo = InputMediaPhoto(media=file_id)
             elif preview.file.file_type is ProductFileType.MEDIA:
                 item = InputMediaVideo(media=file_id)
             else:
