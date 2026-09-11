@@ -32,7 +32,7 @@ def create_admin_router(service: StoreService, settings: Settings) -> Router:
             return
         await message.answer("Admin", reply_markup=_admin_keyboard())
 
-    @router.callback_query(F.data.startswith("v1:admin:"))
+    @router.callback_query(F.data.startswith("v1:admin_"))
     async def admin_callback(callback: CallbackQuery, state: FSMContext) -> None:
         actor = callback.from_user.id
         if not authorized(actor):
