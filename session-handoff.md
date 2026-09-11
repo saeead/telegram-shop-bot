@@ -1,17 +1,20 @@
 # Session Handoff
 
 ## Where we are
-Phase 1 — Foundation & Harness is verified and passing. Phase 2 — Product Intake & Domain is authorized and in progress.
+Phase 1 — Foundation & Harness is verified and passing. Phase 2 — Product Intake & Domain is authorized to begin after the Phase 1 branch is preserved as the verified foundation.
 
 ## Active feature state
-`PRD-001` is `in_progress`. All other features remain `not_started` unless already marked `passing` in `feature_list.json`.
+No Phase 2 feature is `in_progress` on this Phase 1 branch. FND-001..FND-004 are `passing`; PRD-001 and PRD-002 remain `not_started` until the Phase 2 branch begins.
 
 ## Phase 1 verification evidence
 - GitHub Actions CI run: `34632397963`
-- Verified commit before documentation closeout: `61544abfac695081c272c584656f4bfa252ef5f2`
+- Verified implementation commit: `61544abfac695081c272c584656f4bfa252ef5f2`
 - CI verify job completed successfully.
 - The verify job installed dependencies, ran `alembic upgrade head`, and ran `scripts/check.sh` with PostgreSQL and Redis service containers.
 - FND-001..FND-004 are recorded as `passing` in `feature_list.json`.
+
+## Phase 2 authorization
+The Phase 1 gate is closed successfully. The next branch should start from the final verified Phase 1 commit and implement only Phase 2 scope.
 
 ## Phase 2 scope
 - Build Product aggregate and related domain concepts.
@@ -47,4 +50,4 @@ Domain must not import aiogram, Telegram Bot API, SQLAlchemy, Redis, Zarinpal, o
 - Record executable evidence in `feature_list.json` and `PROGRESS.md`.
 
 ## Next action
-Implement `PRD-001` first, with small testable changes. Then implement `PRD-002`. Keep exactly one feature `in_progress`. Do not start Phase 3 until Phase 2 is verified.
+Create the Phase 2 branch from the verified Phase 1 head, set exactly one Phase 2 feature to `in_progress`, and implement `PRD-001` first. Then implement `PRD-002`. Do not start Phase 3 until Phase 2 is verified.
