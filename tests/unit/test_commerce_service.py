@@ -118,13 +118,29 @@ def make_product() -> Product:
 
 
 @pytest.mark.asyncio
-async def test_successful_payment_and_duplicate_callback_are_idempotent():
+async def test_order_creation_is_idempotent_and_snapshots_price():
+    product = make_product()
+    repository = FakeCommerceRepository()
+    service = CommerceService(FakeProducts(product), repository, {})
+    first = await service.create_order(100, product.id, 1, "order-key")
+    product.price = Decimal(2000)
+    second = await service.create_order(100, product.id, 1, "order-key")
+    assert first.id == second.id
+    assert first.total_amount == Decimal(1000)
+    assert second.total_amount == Decimal(1000)
+
+
+@pytest.mark.asyncio
+async def test_payment_creation_is_idempotent():
+    product = make_product()
     provider = FakeProvider()
     repository = FakeCommerceRepository()
-    service = CommerceService(FakeProducts(make_product()), repository, {"fake": provider})
-    order = await service.create_order(100, repository_product_id := make_product().id, 1, "k1")
-    # The fake product repository above has a different UUID, so use its actual product id.
-    assert repository_product_id != order.items[0].product_id
+    service = CommerceService(FakeProducts(product), repository, {"fake": provider})
+    order = await service.create_order(100, product.id, 1, "payment-key")
+    first = await service.create_payment(order.id, "fake", "https://shop.test/callback")
+    second = await service.create_payment(order.id, "fake", "https://shop.test/callback")
+    assert first.authority == second.authority == "AUTH-1"
+    assert provider.create_calls == 1
 
 
 @pytest.mark.asyncio
@@ -134,8 +150,7 @@ async def test_payment_success_and_replayed_callback():
     repository = FakeCommerceRepository()
     service = CommerceService(FakeProducts(product), repository, {"fake": provider})
     order = await service.create_order(100, product.id, 1, "order-1")
-    payment = await service.create_payment(order.id, "fake", "https://shop.test/callback")
-    assert payment.authority == "AUTH-1"
+    await service.create_payment(order.id, "fake", "https://shop.test/callback")
     assert await service.handle_callback(order.id, "fake", "AUTH-1", "OK") is True
     assert await service.handle_callback(order.id, "fake", "AUTH-1", "OK") is True
     assert provider.verify_calls == 1
@@ -152,7 +167,7 @@ async def test_invalid_callback_and_amount_mismatch_are_rejected():
     await service.create_payment(order.id, "fake", "https://shop.test/callback")
     with pytest.raises(CommerceError, match="status"):
         await service.handle_callback(order.id, "fake", "AUTH-1", "MAYBE")
-    payment = repository.payments[order.id] if order.id in repository.payments else next(iter(repository.payments.values()))
+    payment = next(iter(repository.payments.values()))
     payment.amount = Decimal(999)
     with pytest.raises(CommerceError, match="amount"):
         await service.handle_callback(order.id, "fake", "AUTH-1", "OK")
@@ -173,7 +188,7 @@ async def test_provider_timeout_marks_payment_failed():
 
 
 @pytest.mark.asyncio
-async def test_provider_retry_after_failure_can_succeed():
+async def test_provider_retry_after_failed_verification_can_succeed():
     product = make_product()
     provider = FakeProvider()
     provider.fail_verify = True
@@ -182,7 +197,9 @@ async def test_provider_retry_after_failure_can_succeed():
     order = await service.create_order(100, product.id, 1, "order-4")
     await service.create_payment(order.id, "fake", "https://shop.test/callback")
     assert await service.handle_callback(order.id, "fake", "AUTH-1", "OK") is False
-    assert repository.orders[order.id].status.value == "payment_failed"
+    provider.fail_verify = False
+    assert await service.handle_callback(order.id, "fake", "AUTH-1", "OK") is True
+    assert provider.verify_calls == 2
 
 
 @pytest.mark.asyncio
