@@ -23,7 +23,15 @@ async def test_zarinpal_request_validates_response():
 
     provider = ZarinpalProvider("merchant", client=make_client(handler))
     result = await provider.create_payment(
-        PaymentRequest(uuid4(), uuid4(), Decimal(1000), "IRR", "Order", "https://shop/callback", "k")
+        PaymentRequest(
+            uuid4(),
+            uuid4(),
+            Decimal(1000),
+            "IRR",
+            "Order",
+            "https://shop/callback",
+            "k",
+        )
     )
     assert result.authority == "A-1"
     assert result.payment_url.endswith("/pg/StartPay/A-1")
@@ -51,7 +59,15 @@ async def test_zarinpal_rejects_malformed_external_response():
     provider = ZarinpalProvider("merchant", client=make_client(handler))
     with pytest.raises(ZarinpalError, match="authority"):
         await provider.create_payment(
-            PaymentRequest(uuid4(), uuid4(), Decimal(1000), "IRR", "Order", "https://shop/callback", "k")
+            PaymentRequest(
+                uuid4(),
+                uuid4(),
+                Decimal(1000),
+                "IRR",
+                "Order",
+                "https://shop/callback",
+                "k",
+            )
         )
 
 
@@ -63,5 +79,13 @@ async def test_zarinpal_provider_error_is_safe():
     provider = ZarinpalProvider("merchant", client=make_client(handler))
     with pytest.raises(ZarinpalError, match="API error"):
         await provider.create_payment(
-            PaymentRequest(uuid4(), uuid4(), Decimal(1000), "IRR", "Order", "https://shop/callback", "k")
+            PaymentRequest(
+                uuid4(),
+                uuid4(),
+                Decimal(1000),
+                "IRR",
+                "Order",
+                "https://shop/callback",
+                "k",
+            )
         )
