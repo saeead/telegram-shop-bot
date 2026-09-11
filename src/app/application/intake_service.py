@@ -3,16 +3,20 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from decimal import Decimal, InvalidOperation
+from decimal import Decimal
 from uuid import UUID
 
 from app.application.catalog_ports import ProductRepository
 from app.application.ports.cache import CachePort
-from app.application.telegram_ports import AdminReview, TelegramIntakePort
+from app.application.telegram_ports import AdminReview
 from app.catalog.classification import IncomingFile, classify_batch
 from app.catalog.product_code import generate_product_code
 from app.domain.intake import ProductIntake, ProductIntakeState
 from app.domain.product import Category, Product, ProductFile, Tag
+
+
+class PublicationError(RuntimeError):
+    """Raised when the external publication boundary cannot publish a product."""
 
 
 class ProductPublisherPort:
@@ -35,12 +39,10 @@ class ProductIntakeService:
         self,
         repository: ProductRepository,
         cache: CachePort,
-        telegram: TelegramIntakePort,
         publisher: ProductPublisherPort,
     ) -> None:
         self._repository = repository
         self._cache = cache
-        self._telegram = telegram
         self._publisher = publisher
 
     async def receive_batch(self, admin_chat_id: int, files: list[IncomingFile]) -> ProductIntake:
@@ -63,13 +65,11 @@ class ProductIntakeService:
             for item in classified
         ]
         product = Product(
-            id=UUID(int=0),
             product_code=product_code,
             name=f"Untitled {product_code}",
             price=Decimal("0"),
             files=product_files,
         )
-        product.id = UUID(int=0) if product.id.int == 0 else product.id
         intake.attach_product(product.id)
         intake.transition_to(ProductIntakeState.WAITING_FOR_METADATA)
         await self._repository.add(product)
@@ -111,7 +111,7 @@ class ProductIntakeService:
         await self._repository.commit()
         try:
             await self._publisher.publish(product)
-        except Exception as exc:
+        except PublicationError as exc:
             intake.fail(f"publication failed: {exc}")
             await self._repository.save_intake(intake)
             await self._repository.commit()
@@ -155,10 +155,7 @@ class ProductIntakeService:
             raise ValueError("category is required")
         if metadata.price < 0:
             raise ValueError("price must not be negative")
-        try:
-            currency = metadata.currency.strip().upper()
-        except AttributeError as exc:
-            raise ValueError("currency is invalid") from exc
+        currency = metadata.currency.strip().upper()
         if len(currency) != 3 or not currency.isalpha():
             raise ValueError("currency must be a three-letter code")
 
