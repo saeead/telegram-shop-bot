@@ -1,11 +1,23 @@
 from decimal import Decimal
-from uuid import uuid4
 
 import pytest
 
 from app.application.store_ports import StorePublication
-from app.application.store_service import AdminAuthorizer, AuthorizationError, ProductEdit, StoreService
-from app.domain.product import Category, Product, ProductFile, ProductFileRole, ProductFileType, ProductStatus, Tag
+from app.application.store_service import (
+    AdminAuthorizer,
+    AuthorizationError,
+    ProductEdit,
+    StoreService,
+)
+from app.domain.product import (
+    Category,
+    Product,
+    ProductFile,
+    ProductFileRole,
+    ProductFileType,
+    ProductStatus,
+    Tag,
+)
 
 
 class FakeRepository:
@@ -75,6 +87,9 @@ def make_product() -> Product:
                 telegram_chat_id=2,
                 file_type=ProductFileType.IMAGE,
                 role=ProductFileRole.PREVIEW,
+                original_filename=None,
+                mime_type="image/jpeg",
+                size=10,
             ),
             ProductFile(
                 telegram_file_id="main",
@@ -82,6 +97,9 @@ def make_product() -> Product:
                 telegram_chat_id=2,
                 file_type=ProductFileType.ARCHIVE,
                 role=ProductFileRole.MAIN,
+                original_filename="model.zip",
+                mime_type="application/zip",
+                size=20,
             ),
         ],
     )
