@@ -1,5 +1,4 @@
 from functools import lru_cache
-from typing import cast
 
 from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -30,4 +29,4 @@ class Settings(BaseSettings):
 
 @lru_cache(maxsize=1)
 def get_settings() -> Settings:
-    return cast(Settings, Settings())
+    return Settings()  # type: ignore[call-arg]
