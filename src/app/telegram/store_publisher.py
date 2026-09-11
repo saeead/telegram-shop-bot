@@ -5,29 +5,12 @@ from __future__ import annotations
 from typing import cast
 
 from aiogram import Bot
-from aiogram.types import (
-    InlineKeyboardButton,
-    InlineKeyboardMarkup,
-    InputMediaAudio,
-    InputMediaDocument,
-    InputMediaLivePhoto,
-    InputMediaPhoto,
-    InputMediaVideo,
-)
+from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup, MediaUnion
 from aiogram.utils.media_group import MediaGroupBuilder
 
 from app.application.store_ports import StorePublication
 from app.domain.product import Product, ProductFileType
 from app.presentation.store import build_product_caption, buy_callback
-
-
-TelegramMedia = list[
-    InputMediaAudio
-    | InputMediaDocument
-    | InputMediaLivePhoto
-    | InputMediaPhoto
-    | InputMediaVideo
-]
 
 
 class TelegramStorePublisher:
@@ -52,7 +35,7 @@ class TelegramStorePublisher:
             else:
                 raise ValueError("only image/video previews may be published")
 
-        media = cast(TelegramMedia, media_group.build())
+        media = cast(list[MediaUnion], media_group.build())
         messages = await self._bot.send_media_group(chat_id=channel_id, media=media)
         cta = await self._bot.send_message(
             chat_id=channel_id,
