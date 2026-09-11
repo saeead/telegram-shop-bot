@@ -7,7 +7,16 @@ from decimal import Decimal
 from typing import Any
 from uuid import UUID
 
-from sqlalchemy import BIGINT, JSON, DateTime, ForeignKey, Integer, Numeric, String, UniqueConstraint
+from sqlalchemy import (
+    BIGINT,
+    JSON,
+    DateTime,
+    ForeignKey,
+    Integer,
+    Numeric,
+    String,
+    UniqueConstraint,
+)
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 
 
@@ -119,7 +128,9 @@ class OrderModel(Base):
     currency: Mapped[str] = mapped_column(String(3))
     total_amount: Mapped[Decimal] = mapped_column(Numeric(20, 0))
     status: Mapped[str] = mapped_column(String(32), index=True)
-    expires_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True, index=True)
+    expires_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True, index=True
+    )
     idempotency_key: Mapped[str] = mapped_column(String(255))
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
@@ -150,7 +161,9 @@ class PaymentModel(Base):
     __tablename__ = "payments"
     __table_args__ = (
         UniqueConstraint("order_id", name="uq_payments_order_id"),
-        UniqueConstraint("provider", "provider_reference", name="uq_payments_provider_reference"),
+        UniqueConstraint(
+            "provider", "provider_reference", name="uq_payments_provider_reference"
+        ),
     )
 
     id: Mapped[UUID] = mapped_column(primary_key=True)
