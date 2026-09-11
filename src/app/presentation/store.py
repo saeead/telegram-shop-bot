@@ -24,8 +24,7 @@ def preview_file_ids(product: Product) -> tuple[str, ...]:
     return tuple(
         preview.file.telegram_file_id
         for preview in product.previews
-        if preview.file.telegram_file_id
-        and preview.file.role is ProductFileRole.PREVIEW
+        if preview.file.telegram_file_id and preview.file.role is ProductFileRole.PREVIEW
     )
 
 
