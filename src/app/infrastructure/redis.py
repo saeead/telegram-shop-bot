@@ -6,7 +6,7 @@ from app.application.ports.cache import CachePort
 class RedisStore(CachePort):
     """Redis adapter for transient state, locks, cache and idempotency records."""
 
-    def __init__(self, client: Redis[str]) -> None:
+    def __init__(self, client: Redis) -> None:
         self._client = client
 
     async def get(self, key: str) -> str | None:
