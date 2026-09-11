@@ -14,7 +14,7 @@ def make_product() -> Product:
     return Product(
         product_code="P-INTEGRATION-TEST",
         name="Integration Product",
-        price=Decimal("1000"),
+        price=Decimal(1000),
         files=[
             ProductFile(
                 telegram_file_id="file-1",
