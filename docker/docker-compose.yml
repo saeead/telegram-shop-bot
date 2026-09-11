@@ -2,7 +2,7 @@ services:
   postgres:
     image: postgres:17
     environment:
-      POSTGRES_DB: telegram_store
+      POSTGRES_DB: telegram_file_store
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
     ports:
