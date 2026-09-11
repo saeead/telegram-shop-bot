@@ -27,20 +27,19 @@ def create_store_router(service: StoreService) -> Router:
             await callback.answer("Invalid action", show_alert=True)
             return
         if data.action == "categories":
-            categories = await service.categories()
-            await _answer_categories(callback, categories)
+            await _answer_categories(callback, await service.categories())
+            return
+        if data.action == "tags":
+            await _answer_tags(callback, await service.tags())
             return
         if data.action == "products":
-            products = await service.products()
-            await _answer_products(callback, products)
+            await _answer_products(callback, await service.products())
             return
         if data.action == "category":
-            products = await service.products(category=data.value)
-            await _answer_products(callback, products)
+            await _answer_products(callback, await service.products(category=data.value))
             return
         if data.action == "tag":
-            products = await service.products(tag=data.value)
-            await _answer_products(callback, products)
+            await _answer_products(callback, await service.products(tag=data.value))
             return
         if data.action == "buy":
             await callback.answer("Purchase flow is not enabled in this phase.", show_alert=True)
@@ -54,6 +53,7 @@ def _home_keyboard() -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup(
         inline_keyboard=[
             [InlineKeyboardButton(text="Categories", callback_data="v1:categories:home")],
+            [InlineKeyboardButton(text="Tags", callback_data="v1:tags:home")],
             [InlineKeyboardButton(text="Products", callback_data="v1:products:all")],
         ]
     )
@@ -69,6 +69,17 @@ async def _answer_categories(callback: CallbackQuery, categories: list[str]) -> 
         await callback.message.answer(
             "Categories", reply_markup=InlineKeyboardMarkup(inline_keyboard=buttons)
         )
+    await callback.answer()
+
+
+async def _answer_tags(callback: CallbackQuery, tags: list[str]) -> None:
+    buttons = [
+        [InlineKeyboardButton(text=tag, callback_data=encode_callback("tag", tag))]
+        for tag in tags
+    ]
+    buttons.append([InlineKeyboardButton(text="Home", callback_data="v1:products:home")])
+    if callback.message:
+        await callback.message.answer("Tags", reply_markup=InlineKeyboardMarkup(inline_keyboard=buttons))
     await callback.answer()
 
 
