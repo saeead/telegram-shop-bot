@@ -1,3 +1,5 @@
+from pydantic import ValidationError
+
 from app.config.settings import Settings
 
 
@@ -15,7 +17,7 @@ def test_settings_reject_missing_bot_token(monkeypatch):
 
     try:
         Settings()
-    except Exception as exc:
+    except ValidationError as exc:
         assert "telegram_bot_token" in str(exc)
     else:
         raise AssertionError("Settings must reject a missing Telegram bot token")
