@@ -161,9 +161,7 @@ class PaymentModel(Base):
     __tablename__ = "payments"
     __table_args__ = (
         UniqueConstraint("order_id", name="uq_payments_order_id"),
-        UniqueConstraint(
-            "provider", "provider_reference", name="uq_payments_provider_reference"
-        ),
+        UniqueConstraint("provider", "provider_reference", name="uq_payments_provider_reference"),
     )
 
     id: Mapped[UUID] = mapped_column(primary_key=True)
