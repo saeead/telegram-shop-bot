@@ -22,6 +22,7 @@ class ProductFileRole(StrEnum):
 
 class ProductFileType(StrEnum):
     IMAGE = "image"
+    MEDIA = "media"
     DOCUMENT = "document"
     ARCHIVE = "archive"
     UNKNOWN = "unknown"
