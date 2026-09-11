@@ -4,7 +4,12 @@ from uuid import UUID
 import pytest
 
 from app.application.catalog_ports import ProductRepository
-from app.application.intake_service import ProductIntakeService, ProductMetadata, PublicationError, ProductPublisherPort
+from app.application.intake_service import (
+    ProductIntakeService,
+    ProductMetadata,
+    ProductPublisherPort,
+    PublicationError,
+)
 from app.application.ports.cache import CachePort
 from app.catalog.classification import IncomingFile, IncomingMediaKind
 from app.domain.intake import ProductIntake, ProductIntakeState
@@ -92,7 +97,7 @@ async def test_intake_full_flow() -> None:
 
     review = await service.set_metadata(
         intake.id,
-        ProductMetadata("Dragon", "Figures", Decimal("250000"), tags=("stl",)),
+        ProductMetadata("Dragon", "Figures", Decimal(250000), tags=("stl",)),
     )
     assert review.name == "Dragon"
     assert review.main_file_count == 2
@@ -107,7 +112,7 @@ async def test_publication_failure_moves_intake_to_failed() -> None:
     repository = FakeRepository()
     service = ProductIntakeService(repository, FakeCache(), FakePublisher(fail=True))
     intake = await service.receive_batch(9001, [source(1, "model.stl")])
-    await service.set_metadata(intake.id, ProductMetadata("Model", "Figures", Decimal("1")))
+    await service.set_metadata(intake.id, ProductMetadata("Model", "Figures", Decimal(1)))
 
     with pytest.raises(PublicationError):
         await service.confirm(intake.id)
