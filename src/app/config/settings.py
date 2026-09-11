@@ -22,9 +22,19 @@ class Settings(BaseSettings):
     app_env: str = Field(default="development", pattern="^(development|test|staging|production)$")
     log_level: str = Field(default="INFO", pattern="^(DEBUG|INFO|WARNING|ERROR|CRITICAL)$")
     telegram_bot_token: str = Field(min_length=1)
+    telegram_admin_ids: str = ""
 
     database_url: str = "postgresql+asyncpg://postgres:postgres@localhost:5432/telegram_file_store"
     redis_url: str = "redis://localhost:6379/0"
+
+    @property
+    def admin_ids(self) -> frozenset[int]:
+        values: set[int] = set()
+        for raw in self.telegram_admin_ids.split(","):
+            item = raw.strip()
+            if item:
+                values.add(int(item))
+        return frozenset(values)
 
 
 @lru_cache(maxsize=1)

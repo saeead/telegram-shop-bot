@@ -1,19 +1,18 @@
 # PROGRESS
 
 ## Current Verified State
-- Phase: 1 — Foundation & Harness
-- Repository state: foundation implementation prepared on `phase-1-foundation`; verification is currently blocked in this execution environment.
-- Standard startup: `TELEGRAM_BOT_TOKEN=... python -m app.main`
-- Standard verification: `pytest`, `ruff check .`, `ruff format --check .`, `mypy src`, `python -m compileall -q src`, and `./scripts/check.sh`
-- Highest priority unfinished feature: `FND-001`
-- Current blocker: this execution environment cannot install Python dependencies from the external package index and does not provide Docker, so Phase 1 cannot truthfully be marked passing here.
-- Production readiness: not applicable
+- Phase: 1 — Foundation & Harness — verified and passing.
+- Repository state: Phase 1 implementation and verification evidence are complete on `phase-1-foundation`.
+- Standard verification: `pytest`, `ruff check .`, `ruff format --check .`, `mypy src`, `python -m compileall -q src`, and `./scripts/check.sh`.
+- Verification evidence: GitHub Actions CI run `34632397963` completed successfully on commit `61544abfac695081c272c584656f4bfa252ef5f2`.
+- Highest priority unfinished feature: `PRD-001`.
+- Production readiness: not applicable.
 
 ## Phase status
 | Phase | Status | Exit condition |
 |---|---|---|
-| 1 Foundation & Harness | in_progress | FND-001..FND-004 passing with reproducible evidence |
-| 2 Product & Telegram Intake | not_started | admin can intake, classify, confirm, publish |
+| 1 Foundation & Harness | passing | FND-001..FND-004 passing with reproducible evidence |
+| 2 Product & Telegram Intake | not_started | admin can intake, classify, collect metadata, confirm, publish |
 | 3 Store & Admin | not_started | store browsing/search/admin management works |
 | 4 Orders & Payment | not_started | IRR + crypto abstraction and idempotent payment flow |
 | 5 Delivery & Commerce | not_started | paid multi-file delivery is reliable and auditable |
@@ -21,43 +20,40 @@
 
 ## Feature evidence
 ### FND-001
-- Implemented validated Pydantic Settings configuration.
-- Added required Telegram bot token validation.
-- Added application logging/bootstrap path.
-- Added unit tests for valid and invalid configuration.
-- Verification from the previous repository state: `pytest -q` → 3 passed; `python -m compileall -q src` → passed.
-- Current branch requires re-verification after foundation changes.
-- Status: `blocked` until dependency bootstrap and startup can be executed.
+- Validated Pydantic Settings configuration and required Telegram bot token validation implemented.
+- Application logging/bootstrap path and configuration tests implemented.
+- Status: `passing`.
+- Evidence: CI run `34632397963` completed successfully.
 
 ### FND-002
-- Implemented SQLAlchemy async engine/session factory and database health check.
-- Added Alembic configuration using the async PostgreSQL driver.
-- Added an empty baseline migration; no business tables are created in Phase 1.
-- Aligned Docker PostgreSQL database name with `DATABASE_URL`.
-- Added PostgreSQL integration health test.
-- Status: `blocked` pending executable PostgreSQL/Docker verification.
+- SQLAlchemy async engine/session factory and database health check implemented.
+- Async Alembic environment and empty baseline migration implemented.
+- PostgreSQL integration health test implemented.
+- Status: `passing`.
+- Evidence: CI run `34632397963` successfully started PostgreSQL services, ran `alembic upgrade head`, and completed `scripts/check.sh`.
 
 ### FND-003
-- Added application-level `CachePort` abstraction.
-- Added Redis adapter supporting transient state, TTL cache, distributed-lock primitives, and idempotency storage semantics.
-- Added Redis health check and integration test.
+- Application `CachePort` and Redis adapter implemented for transient state, TTL cache, locks, and idempotency storage semantics.
+- Redis health/integration test implemented.
 - Domain has no Redis dependency.
-- Status: `blocked` pending executable Redis/Docker verification.
+- Status: `passing`.
+- Evidence: CI run `34632397963` successfully started Redis services and completed `scripts/check.sh`.
 
 ### FND-004
-- Extended `scripts/check.sh` with compile verification and harness-state validation.
-- Added reproducible GitHub Actions CI with PostgreSQL and Redis services.
-- Added baseline migration so `alembic upgrade head` has a deterministic head without business tables.
-- Existing clean-state and evaluation documents remain repository-tracked.
-- Status: `blocked` pending successful CI/local execution evidence for the completed branch.
+- Standard harness covers pytest, Ruff, format, mypy, compileall, and feature-state validation.
+- GitHub Actions CI provisions PostgreSQL and Redis and runs migrations plus the standard checks.
+- Status: `passing`.
+- Evidence: CI run `34632397963` completed successfully with all verify steps green.
 
 ## Session records
 ### Session 002 — Phase 1 foundation infrastructure
-- Goal: implement FND-001..FND-004 without entering business features.
-- Completed: PostgreSQL infrastructure, async Alembic setup, Redis abstraction/adapter, integration health tests, harness verification command, CI workflow, database-name alignment, and baseline migration.
-- Compatibility decision: SQLAlchemy asyncio support is installed explicitly through the `[asyncio]` extra; current SQLAlchemy 2.0 documentation confirms the async engine/session APIs and Alembic documents the async migration pattern.
-- Verification blocker: the current execution environment cannot resolve external package indexes and has no Docker executable, so no new test run is claimed as evidence.
-- Next action: run the Phase 1 branch/PR in an environment with dependency installation and Docker or equivalent PostgreSQL/Redis services; only then update statuses to `passing` if every verification command succeeds.
+- Completed PostgreSQL infrastructure, async Alembic setup, Redis abstraction/adapter, integration health tests, harness verification command, CI workflow, database-name alignment, baseline migration, and type/lint fixes.
+- Final Phase 1 verification is recorded from GitHub Actions CI run `34632397963`.
+
+### Session 003 — Phase 1 verification gate
+- CI run `34632397963` completed successfully for the Phase 1 branch.
+- FND-001..FND-004 are now truthfully marked `passing` with executable evidence.
+- Phase 2 is authorized to begin, but its features remain `not_started` on the Phase 1 branch.
 
 ## Phase gate
-Phase 2 must not begin until FND-001, FND-002, FND-003, and FND-004 are independently verified and marked `passing` with evidence.
+Phase 2 may begin because FND-001, FND-002, FND-003, and FND-004 are independently verified and marked `passing` with CI evidence.
