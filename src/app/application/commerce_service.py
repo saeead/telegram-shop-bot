@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import UTC, datetime
 from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
 from uuid import UUID
 
@@ -203,7 +203,10 @@ class CommerceService:
         payment = await self._repository.get_payment_by_order(order.id)
         if payment is None or payment.provider != provider_name:
             raise CommerceError("payment provider mismatch")
-        if payment.amount != order.total_amount or payment.currency.upper() != order.currency.upper():
+        if (
+            payment.amount != order.total_amount
+            or payment.currency.upper() != order.currency.upper()
+        ):
             raise CommerceError("payment amount mismatch")
         if payment.provider_reference and payment.provider_reference != authority:
             raise CommerceError("authority mismatch")
