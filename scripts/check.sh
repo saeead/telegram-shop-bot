@@ -5,9 +5,11 @@ python -m pytest
 ruff check .
 ruff format --check .
 python -m mypy src
+python -m compileall -q src
 python - <<'PY'
 import json
 from pathlib import Path
+
 p = Path('feature_list.json')
 data = json.loads(p.read_text())
 active = [f for f in data['features'] if f['status'] == 'in_progress']
