@@ -121,14 +121,19 @@ class Product:
 
     @property
     def previews(self) -> list[ProductPreview]:
-        return [ProductPreview(file) for file in self.files if file.role is ProductFileRole.PREVIEW]
+        return [
+            ProductPreview(file) for file in self.files if file.role is ProductFileRole.PREVIEW
+        ]
 
     @property
     def main_files(self) -> list[ProductFile]:
         return [file for file in self.files if file.role is ProductFileRole.MAIN]
 
     def add_file(self, product_file: ProductFile) -> None:
-        if any(existing.telegram_message_id == product_file.telegram_message_id for existing in self.files):
+        if any(
+            existing.telegram_message_id == product_file.telegram_message_id
+            for existing in self.files
+        ):
             raise ValueError("Telegram message already belongs to this product")
         self.files.append(product_file)
         self.validate()
