@@ -52,6 +52,19 @@ class SqlAlchemyProductRepository(ProductRepository):
         ]
         self._session.add(model)
 
+    async def update(self, product: Product) -> None:
+        model = await self._session.get(ProductModel, product.id)
+        if model is None:
+            raise ValueError("product not found")
+        model.name = product.name
+        model.category = product.category.name if product.category else None
+        model.tags = [tag.name for tag in product.tags]
+        model.price = product.price
+        model.currency = product.currency
+        model.status = product.status.value
+        model.description = product.description
+        model.updated_at = datetime.now(UTC)
+
     async def get(self, product_id: UUID) -> Product | None:
         result = await self._session.execute(
             select(ProductModel)
