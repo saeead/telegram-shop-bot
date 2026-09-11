@@ -169,9 +169,7 @@ class SqlAlchemyProductRepository(ProductRepository, StoreRepositoryPort):
 
     async def get_publication(self, product_id: UUID) -> StorePublication | None:
         model = await self._session.scalar(
-            select(StorePublicationModel).where(
-                StorePublicationModel.product_id == product_id
-            )
+            select(StorePublicationModel).where(StorePublicationModel.product_id == product_id)
         )
         if model is None:
             return None
