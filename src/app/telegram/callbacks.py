@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from urllib.parse import quote, unquote
 from uuid import UUID
 
 
@@ -14,9 +15,9 @@ class CallbackData:
 
 
 def encode_callback(action: str, value: str) -> str:
-    if not action or ":" in action or not value or ":" in value:
-        raise ValueError("callback action and value must be non-empty and colon-free")
-    return f"v1:{action}:{value}"
+    if not action or ":" in action or not value:
+        raise ValueError("callback action and value must be non-empty")
+    return f"v1:{action}:{quote(value, safe='') }"
 
 
 def parse_callback(data: str) -> CallbackData:
@@ -29,7 +30,7 @@ def parse_callback(data: str) -> CallbackData:
         raise ValueError("invalid callback version") from exc
     if version != 1:
         raise ValueError("unsupported callback version")
-    return CallbackData(version=version, action=parts[1], value=parts[2])
+    return CallbackData(version=version, action=parts[1], value=unquote(parts[2]))
 
 
 def product_callback(action: str, product_id: UUID) -> str:
