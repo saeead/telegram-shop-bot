@@ -161,7 +161,11 @@ class SqlAlchemyProductRepository(ProductRepository, StoreRepositoryPort):
         products = [_to_domain(model) for model in result.scalars().unique().all()]
         if tag:
             wanted = tag.strip().lower()
-            products = [product for product in products if any(item.name.lower() == wanted for item in product.tags)]
+            products = [
+                product
+                for product in products
+                if any(item.name.lower() == wanted for item in product.tags)
+            ]
         return products
 
     async def get_publication(self, product_id: UUID) -> StorePublication | None:
@@ -179,7 +183,9 @@ class SqlAlchemyProductRepository(ProductRepository, StoreRepositoryPort):
 
     async def save_publication(self, publication: StorePublication) -> None:
         model = await self._session.scalar(
-            select(StorePublicationModel).where(StorePublicationModel.product_id == publication.product_id)
+            select(StorePublicationModel).where(
+                StorePublicationModel.product_id == publication.product_id
+            )
         )
         now = datetime.now(UTC)
         if model is None:
@@ -222,7 +228,9 @@ class SqlAlchemyProductRepository(ProductRepository, StoreRepositoryPort):
         result = await self._session.execute(
             select(ProductModel)
             .options(selectinload(ProductModel.files))
-            .where(ProductModel.status.in_([ProductStatus.PUBLISHED.value, ProductStatus.READY.value]))
+            .where(
+                ProductModel.status.in_([ProductStatus.PUBLISHED.value, ProductStatus.READY.value])
+            )
         )
         return [_to_domain(model) for model in result.scalars().unique().all()]
 
