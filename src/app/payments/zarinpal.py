@@ -45,8 +45,7 @@ class ZarinpalProvider:
         return "https://sandbox.zarinpal.com" if self._sandbox else "https://api.zarinpal.com"
 
     async def create_payment(self, request: PaymentRequest) -> PaymentRequestResult:
-        if request.amount <= 0:
-            raise ZarinpalError("payment amount must be positive")
+        self._validate_amount_currency(request.amount, request.currency)
         payload = {
             "merchant_id": self._merchant_id,
             "amount": int(request.amount),
@@ -73,8 +72,7 @@ class ZarinpalProvider:
     ) -> PaymentVerificationResult:
         if not request.authority.strip():
             raise ZarinpalError("authority must not be empty")
-        if request.amount <= 0:
-            raise ZarinpalError("payment amount must be positive")
+        self._validate_amount_currency(request.amount, request.currency)
         payload = {
             "merchant_id": self._merchant_id,
             "amount": int(request.amount),
@@ -122,6 +120,13 @@ class ZarinpalProvider:
         if not isinstance(body, dict):
             raise ZarinpalError("ZarinPal response must be an object")
         return body
+
+    @staticmethod
+    def _validate_amount_currency(amount: object, currency: str) -> None:
+        if not isinstance(amount, int) or isinstance(amount, bool) or amount <= 0:
+            raise ZarinpalError("payment amount must be a positive integer")
+        if currency.upper() != "IRR":
+            raise ZarinpalError("ZarinPal payments require IRR")
 
     @staticmethod
     def _validated_data(body: dict[str, Any]) -> dict[str, Any]:
