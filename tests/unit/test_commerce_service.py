@@ -139,7 +139,9 @@ async def test_payment_creation_is_idempotent_and_binds_callback_to_order():
     repository = FakeCommerceRepository()
     service = CommerceService(FakeProducts(product), repository, {"fake": provider})
     order = await service.create_order(100, product.id, 1, "payment-key")
-    first = await service.create_payment(order.id, "fake", "https://shop.test/callback?source=telegram")
+    first = await service.create_payment(
+        order.id, "fake", "https://shop.test/callback?source=telegram"
+    )
     second = await service.create_payment(order.id, "fake", "https://shop.test/callback")
     assert first.authority == second.authority == "AUTH-1"
     assert provider.create_calls == 1
