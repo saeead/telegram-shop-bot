@@ -17,7 +17,7 @@ class CallbackData:
 def encode_callback(action: str, value: str) -> str:
     if not action or ":" in action or not value:
         raise ValueError("callback action and value must be non-empty")
-    return f"v1:{action}:{quote(value, safe='') }"
+    return f"v1:{action}:{quote(value, safe='')}"
 
 
 def parse_callback(data: str) -> CallbackData:
