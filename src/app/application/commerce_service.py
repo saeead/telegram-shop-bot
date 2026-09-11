@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from datetime import UTC, datetime
+from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
 from uuid import UUID
 
 from app.application.catalog_ports import ProductRepository
@@ -135,7 +136,7 @@ class CommerceService:
                     amount=payment.amount,
                     currency=payment.currency,
                     description=f"Order {order.order_code}",
-                    callback_url=callback_url,
+                    callback_url=self._callback_url(callback_url, order.id),
                     idempotency_key=attempt.idempotency_key,
                 )
             )
@@ -270,3 +271,14 @@ class CommerceService:
             return self._providers[name]
         except KeyError as exc:
             raise CommerceError("unsupported payment provider") from exc
+
+    @staticmethod
+    def _callback_url(base_url: str, order_id: UUID) -> str:
+        if not base_url.strip():
+            raise CommerceError("payment callback URL is required")
+        parsed = urlsplit(base_url)
+        query = dict(parse_qsl(parsed.query, keep_blank_values=True))
+        query["order_id"] = str(order_id)
+        return urlunsplit(
+            (parsed.scheme, parsed.netloc, parsed.path, urlencode(query), parsed.fragment)
+        )
