@@ -1,39 +1,50 @@
 # Session Handoff
 
 ## Where we are
-Phase 1 — Foundation & Harness.
+Phase 1 — Foundation & Harness is verified and passing. Phase 2 — Product Intake & Domain is authorized and in progress.
 
 ## Active feature state
-No feature is `in_progress`; FND-001..FND-004 are implemented but `blocked` pending executable verification in an environment with Python package-index access and PostgreSQL/Redis services.
+`PRD-001` is `in_progress`. All other features remain `not_started` unless already marked `passing` in `feature_list.json`.
 
-## What changed
-- Kept the existing Pydantic Settings and bootstrap foundation.
-- Added SQLAlchemy 2.x async engine/session factory and database health check.
-- Added async Alembic environment and an empty baseline migration; no business tables were introduced.
-- Aligned Docker PostgreSQL database name with `DATABASE_URL`.
-- Added application `CachePort` and Redis adapter for transient state, TTL cache, locks, and idempotency storage.
-- Added PostgreSQL/Redis integration health tests.
-- Extended `scripts/check.sh` with compile verification.
-- Added GitHub Actions CI with PostgreSQL and Redis services and migration execution.
-- Updated repository progress/feature evidence without falsely marking unverified work as passing.
+## Phase 1 verification evidence
+- GitHub Actions CI run: `34632397963`
+- Verified commit before documentation closeout: `61544abfac695081c272c584656f4bfa252ef5f2`
+- CI verify job completed successfully.
+- The verify job installed dependencies, ran `alembic upgrade head`, and ran `scripts/check.sh` with PostgreSQL and Redis service containers.
+- FND-001..FND-004 are recorded as `passing` in `feature_list.json`.
 
-## Verification status
-- Previous scaffold evidence: `pytest -q` → 3 passed; `python -m compileall -q src` → passed.
-- Current Phase 1 changes: not locally executed because this environment cannot reach the external Python package index and does not provide Docker.
-- CI workflow is present but must complete successfully before feature statuses can be changed to `passing`.
+## Phase 2 scope
+- Build Product aggregate and related domain concepts.
+- Implement ProductFile/ProductPreview/Category/Tag/ProductStatus/ProductIntake concepts.
+- Implement explicit intake state machine with valid transitions and failure states.
+- Implement classification of Telegram-forwarded media/files without storing file bytes on the application server.
+- Implement product-code generation and metadata validation.
+- Implement application orchestration for admin intake, metadata collection, review, confirmation, edit, and cancellation.
+- Implement Telegram adapter boundary and fake adapter tests where practical.
+- Add PostgreSQL persistence for Phase 2 business data only.
+- Use Redis only through the existing application port/abstraction for FSM/transient intake state.
 
-## Important truth
-Do not mark any Phase 1 feature as passing without fresh executable evidence covering the completed branch.
+## Explicitly out of scope
+- Customer purchase flow.
+- Payment/Zarinpal/crypto integration.
+- Delivery/fulfillment.
+- Store publication UX beyond the Phase 2 confirmation/publishing boundary needed by the intake use case.
+- WooCommerce/webhook integration.
+
+## Required architecture
+`presentation/telegram -> application -> domain`
+`infrastructure -> application/domain`
+`domain -> nothing external`
+
+Domain must not import aiogram, Telegram Bot API, SQLAlchemy, Redis, Zarinpal, or crypto SDKs.
+
+## Required verification before Phase 2 completion
+- `pytest`
+- `ruff check .`
+- `ruff format --check .`
+- `mypy src`
+- Integration coverage for persistence, intake state, Redis FSM, and Telegram adapter boundary.
+- Record executable evidence in `feature_list.json` and `PROGRESS.md`.
 
 ## Next action
-1. Open the Phase 1 PR and let CI execute with PostgreSQL and Redis services.
-2. If CI passes, rerun the exact verification commands in a developer environment and record the evidence.
-3. Only after FND-001..FND-004 are all `passing`, begin Phase 2.
-
-## Do not do yet
-- No product intake.
-- No Product/Order/Payment/Customer business tables.
-- No Telegram product handlers.
-- No payment implementation.
-- No delivery implementation.
-- No WooCommerce integration.
+Implement `PRD-001` first, with small testable changes. Then implement `PRD-002`. Keep exactly one feature `in_progress`. Do not start Phase 3 until Phase 2 is verified.
