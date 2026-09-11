@@ -3,11 +3,16 @@
 from __future__ import annotations
 
 from aiogram import Bot
-from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup, InputMediaPhoto, InputMediaVideo
+from aiogram.types import (
+    InlineKeyboardButton,
+    InlineKeyboardMarkup,
+    InputMediaPhoto,
+    InputMediaVideo,
+)
 
 from app.application.store_ports import StorePublication
 from app.domain.product import Product, ProductFileType
-from app.presentation.store import build_product_caption, buy_callback, preview_file_ids
+from app.presentation.store import build_product_caption, buy_callback
 
 
 class TelegramStorePublisher:
