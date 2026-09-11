@@ -6,6 +6,7 @@ import pytest
 from app.config.settings import Settings
 from app.domain.product import Product, ProductFile, ProductFileRole, ProductFileType
 from app.infrastructure.database import create_engine, create_session_factory
+from app.infrastructure.models import ProductModel
 from app.infrastructure.product_repository import SqlAlchemyProductRepository
 
 
@@ -59,7 +60,9 @@ async def test_product_persistence_round_trip() -> None:
             assert loaded.name == product.name
             assert len(loaded.previews) == 1
             assert len(loaded.main_files) == 1
-            await session.delete(await session.get(__import__("app.infrastructure.models", fromlist=["ProductModel"]).ProductModel, product.id))
+            stored = await session.get(ProductModel, product.id)
+            assert stored is not None
+            await session.delete(stored)
             await session.commit()
     finally:
         await engine.dispose()
