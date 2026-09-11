@@ -65,6 +65,8 @@ class ProductFile:
     def __post_init__(self) -> None:
         if self.telegram_message_id <= 0:
             raise ValueError("telegram_message_id must be positive")
+        if self.telegram_chat_id == 0:
+            raise ValueError("telegram_chat_id must not be zero")
         if self.ordering < 0:
             raise ValueError("ordering must not be negative")
         if self.size is not None and self.size < 0:
@@ -87,6 +89,7 @@ class Product:
     product_code: str
     name: str
     price: Decimal
+    currency: str = "IRR"
     category: Category | None = None
     tags: list[Tag] = field(default_factory=list)
     status: ProductStatus = ProductStatus.DRAFT
@@ -97,6 +100,7 @@ class Product:
     def __post_init__(self) -> None:
         self.product_code = self.product_code.strip().upper()
         self.name = self.name.strip()
+        self.currency = self.currency.strip().upper()
         self.validate()
 
     def validate(self) -> None:
@@ -106,6 +110,8 @@ class Product:
             raise ValueError("product name must not be empty")
         if self.price < 0:
             raise ValueError("price must not be negative")
+        if len(self.currency) != 3 or not self.currency.isalpha():
+            raise ValueError("currency must be a three-letter code")
         if not self.files:
             raise ValueError("product must contain at least one file")
         codes = [file.telegram_message_id for file in self.files]
