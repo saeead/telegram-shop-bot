@@ -32,18 +32,26 @@ class ProductModel(Base):
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
 
     files: Mapped[list[ProductFileModel]] = relationship(
-        back_populates="product", cascade="all, delete-orphan", order_by="ProductFileModel.ordering"
+        back_populates="product",
+        cascade="all, delete-orphan",
+        order_by="ProductFileModel.ordering",
     )
 
 
 class ProductFileModel(Base):
     __tablename__ = "product_files"
     __table_args__ = (
-        UniqueConstraint("telegram_chat_id", "telegram_message_id", name="uq_product_file_telegram_message"),
+        UniqueConstraint(
+            "telegram_chat_id",
+            "telegram_message_id",
+            name="uq_product_file_telegram_message",
+        ),
     )
 
     id: Mapped[UUID] = mapped_column(primary_key=True)
-    product_id: Mapped[UUID] = mapped_column(ForeignKey("products.id", ondelete="CASCADE"), index=True)
+    product_id: Mapped[UUID] = mapped_column(
+        ForeignKey("products.id", ondelete="CASCADE"), index=True
+    )
     telegram_file_id: Mapped[str | None] = mapped_column(String(512), nullable=True)
     telegram_message_id: Mapped[int] = mapped_column(Integer)
     telegram_chat_id: Mapped[int] = mapped_column(Integer)
