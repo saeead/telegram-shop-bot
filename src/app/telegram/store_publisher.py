@@ -3,12 +3,8 @@
 from __future__ import annotations
 
 from aiogram import Bot
-from aiogram.types import (
-    InlineKeyboardButton,
-    InlineKeyboardMarkup,
-    InputMediaPhoto,
-    InputMediaVideo,
-)
+from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
+from aiogram.utils.media_group import MediaGroupBuilder
 
 from app.application.store_ports import StorePublication
 from app.domain.product import Product, ProductFileType
@@ -23,21 +19,23 @@ class TelegramStorePublisher:
         previews = product.previews
         if not previews:
             raise ValueError("published product must contain at least one preview")
-        media: list[InputMediaPhoto | InputMediaVideo] = []
+
+        media_group = MediaGroupBuilder()
         for index, preview in enumerate(previews):
             file_id = preview.file.telegram_file_id
             if not file_id:
                 raise ValueError("preview is missing Telegram file id")
+            caption = build_product_caption(product) if index == 0 else None
             if preview.file.file_type is ProductFileType.IMAGE:
-                item: InputMediaPhoto | InputMediaVideo = InputMediaPhoto(media=file_id)
+                media_group.add_photo(media=file_id, caption=caption)
             elif preview.file.file_type is ProductFileType.MEDIA:
-                item = InputMediaVideo(media=file_id)
+                media_group.add_video(media=file_id, caption=caption)
             else:
                 raise ValueError("only image/video previews may be published")
-            if index == 0:
-                item.caption = build_product_caption(product)
-            media.append(item)
-        messages = await self._bot.send_media_group(chat_id=channel_id, media=media)
+
+        messages = await self._bot.send_media_group(
+            chat_id=channel_id, media=media_group.build()
+        )
         cta = await self._bot.send_message(
             chat_id=channel_id,
             text="Ready to buy?",
