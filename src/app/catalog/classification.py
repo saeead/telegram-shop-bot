@@ -36,6 +36,7 @@ class ClassifiedFile:
 
 MAIN_EXTENSIONS = frozenset({"stl", "zip", "rar", "7z"})
 IMAGE_MIME_PREFIXES = ("image/",)
+VIDEO_MIME_PREFIXES = ("video/",)
 
 
 def classify_file(source: IncomingFile, ordering: int = 0) -> ClassifiedFile:
@@ -44,6 +45,11 @@ def classify_file(source: IncomingFile, ordering: int = 0) -> ClassifiedFile:
         source.mime_type is not None and source.mime_type.lower().startswith(IMAGE_MIME_PREFIXES)
     ):
         return ClassifiedFile(source, ProductFileRole.PREVIEW, ProductFileType.IMAGE, ordering)
+
+    if source.media_kind is IncomingMediaKind.VIDEO or (
+        source.mime_type is not None and source.mime_type.lower().startswith(VIDEO_MIME_PREFIXES)
+    ):
+        return ClassifiedFile(source, ProductFileRole.PREVIEW, ProductFileType.MEDIA, ordering)
 
     if extension in MAIN_EXTENSIONS:
         file_type = ProductFileType.ARCHIVE if extension != "stl" else ProductFileType.DOCUMENT
