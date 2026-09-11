@@ -64,6 +64,21 @@ def test_product_requires_main_file_before_ready() -> None:
         product.mark_ready()
 
 
+def test_product_can_be_hidden_and_republished() -> None:
+    product = Product(
+        product_code="P-HIDDEN",
+        name="Model",
+        price=Decimal(1),
+        files=[make_file(1, ProductFileRole.PREVIEW), make_file(2)],
+    )
+    product.mark_ready()
+    product.mark_published()
+    product.hide()
+    assert product.status is ProductStatus.HIDDEN
+    product.mark_published()
+    assert product.status is ProductStatus.PUBLISHED
+
+
 def test_intake_state_machine_rejects_invalid_transition() -> None:
     intake = ProductIntake()
     intake.transition_to(ProductIntakeState.CLASSIFYING)

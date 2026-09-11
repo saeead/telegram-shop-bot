@@ -1,7 +1,7 @@
 # Session Handoff
 
 ## Where we are
-Phase 2 — Product Intake & Domain is verified and passing. Phase 3 — Store & Admin is now active on `phase-2-product-intake` and must be implemented without payment or delivery.
+Phase 2 — Product Intake & Domain is verified and passing. Phase 3 — Store & Admin is active on `phase-3-store-admin` in PR #3, targeting the verified Phase 2 branch `phase-2-product-intake`.
 
 ## Verified Phase 2 evidence
 - GitHub Actions CI run: `34634205262`
@@ -18,20 +18,18 @@ Phase 2 — Product Intake & Domain is verified and passing. Phase 3 — Store &
 - Telegram adapter boundary and tests.
 - No payment or delivery implementation.
 
-## Phase 3 scope
-- Public Telegram Store presentation of published products using preview media only.
-- Product caption builder outside the domain layer.
-- Multi-preview/media-group publication where supported.
-- Category navigation and tag filtering.
-- Customer Home/Categories/Products/Search/Back navigation.
-- Versioned and validated callback data.
-- Explicit admin authorization on every admin command and callback.
-- Admin menu for Products, Categories, Orders placeholder/navigation, and Settings placeholder/navigation as appropriate without implementing payment/order processing.
-- Product editing: price, name, category, tags; hide; republish; details.
-- Product visibility states including HIDDEN while preserving historical DB records.
-- Idempotent publication/republish prevention.
-- Audit log with actor, action, entity, entity_id, timestamp, metadata.
-- Tests for navigation, filtering, publication, hide, republish, edits, authorization, callback validation, and duplicate publication prevention.
+## Phase 3 implemented scope
+- Public Store presentation and caption generation outside the domain.
+- Preview-only Telegram media-group publication and Buy CTA boundary.
+- Versioned, encoded, validated callback data.
+- Home, Categories, Tags, Products, category filtering, and tag filtering.
+- StorePublication persistence and idempotent publication prevention.
+- Explicit server-side admin authorization.
+- Admin product listing/details and editing for name, price, category, and tags.
+- Hide and republish with historical records retained.
+- AuditLog persistence for important admin actions.
+- Alembic migration `0003_store_admin`.
+- Unit and PostgreSQL integration coverage.
 
 ## Phase 3 constraints
 - Payment is out of scope.
@@ -48,11 +46,17 @@ Before Phase 3 can be marked passing:
 - `ruff check .`
 - `ruff format --check .`
 - `mypy src`
-- PostgreSQL integration where relevant.
+- PostgreSQL integration and Alembic migration.
 - Redis integration where relevant.
 - Telegram adapter boundary tests.
 - Verify no main files are exposed through public publication code.
-- Verify publication idempotency and audit records.
+- Verify publication idempotency, callback validation, authorization, and audit records.
+
+## Current state
+- Phase 3 remains `in_progress` until fresh CI is green.
+- An early CI run exposed incomplete ProductFile metadata in a new test fixture; that fixture was corrected.
+- Latest implementation also added full admin edit controls and public tag navigation.
+- PR #3 remains open and must not be merged automatically.
 
 ## Next action
-Create `phase-3-store-admin` from the verified Phase 2 state, implement Phase 3 features, update `feature_list.json`, `PROGRESS.md`, `CHANGELOG.md`, `DECISIONS.md`, and this handoff, then run the full verification gate. Do not start Phase 4 until Phase 3 is verified.
+Wait for and inspect the final CI run on the latest head. Fix any remaining verification failures. Only after a green verification gate should `STR-001`/`STR-002` be marked passing and Phase 3 closed. Do not start Phase 4 until then.

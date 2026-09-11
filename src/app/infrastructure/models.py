@@ -1,4 +1,4 @@
-"""SQLAlchemy persistence models for Phase 2 catalog/intake."""
+"""SQLAlchemy persistence models for catalog, store, and audit state."""
 
 from __future__ import annotations
 
@@ -80,4 +80,37 @@ class ProductIntakeModel(Base):
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
 
 
-__all__ = ["Base", "ProductFileModel", "ProductIntakeModel", "ProductModel"]
+class StorePublicationModel(Base):
+    __tablename__ = "store_publications"
+    __table_args__ = (UniqueConstraint("product_id", name="uq_store_publication_product"),)
+
+    id: Mapped[UUID] = mapped_column(primary_key=True)
+    product_id: Mapped[UUID] = mapped_column(ForeignKey("products.id", ondelete="CASCADE"))
+    channel_id: Mapped[int] = mapped_column(Integer)
+    media_message_ids: Mapped[list[int]] = mapped_column(JSON, default=list)
+    cta_message_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    state: Mapped[str] = mapped_column(String(32), default="published", index=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+
+
+class AuditLogModel(Base):
+    __tablename__ = "audit_logs"
+
+    id: Mapped[UUID] = mapped_column(primary_key=True)
+    actor: Mapped[int] = mapped_column(Integer, index=True)
+    action: Mapped[str] = mapped_column(String(64), index=True)
+    entity: Mapped[str] = mapped_column(String(64), index=True)
+    entity_id: Mapped[str] = mapped_column(String(64), index=True)
+    timestamp: Mapped[datetime] = mapped_column(DateTime(timezone=True), index=True)
+    metadata_json: Mapped[dict[str, Any]] = mapped_column("metadata", JSON, default=dict)
+
+
+__all__ = [
+    "AuditLogModel",
+    "Base",
+    "ProductFileModel",
+    "ProductIntakeModel",
+    "ProductModel",
+    "StorePublicationModel",
+]
