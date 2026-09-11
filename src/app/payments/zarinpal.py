@@ -6,6 +6,7 @@ results. No ZarinPal types leak into the order domain.
 
 from __future__ import annotations
 
+from decimal import Decimal
 from typing import Any
 
 import httpx
@@ -122,9 +123,9 @@ class ZarinpalProvider:
         return body
 
     @staticmethod
-    def _validate_amount_currency(amount: object, currency: str) -> None:
-        if not isinstance(amount, int) or isinstance(amount, bool) or amount <= 0:
-            raise ZarinpalError("payment amount must be a positive integer")
+    def _validate_amount_currency(amount: Decimal, currency: str) -> None:
+        if amount <= 0 or amount != amount.to_integral_value():
+            raise ZarinpalError("payment amount must be a positive whole number")
         if currency.upper() != "IRR":
             raise ZarinpalError("ZarinPal payments require IRR")
 
