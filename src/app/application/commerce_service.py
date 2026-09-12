@@ -108,12 +108,12 @@ class CommerceService:
 
         if payment.attempts and payment.attempts[-1].provider_reference:
             attempt = payment.attempts[-1]
+            raw_url = attempt.metadata.get("payment_url")
+            payment_url = raw_url if isinstance(raw_url, str) else ""
             return PaymentRequestResult(
                 provider=payment.provider,
                 authority=attempt.provider_reference or "",
-                payment_url=attempt.metadata.get("payment_url", "")
-                if isinstance(attempt.metadata.get("payment_url", ""), str)
-                else "",
+                payment_url=payment_url,
                 raw_metadata=dict(attempt.metadata),
             )
 
