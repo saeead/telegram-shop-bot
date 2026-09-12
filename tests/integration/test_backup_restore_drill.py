@@ -3,7 +3,9 @@
 from __future__ import annotations
 
 import os
+import shutil
 import subprocess
+import tempfile
 from pathlib import Path
 
 import pytest
@@ -34,7 +36,7 @@ async def test_backup_drill_snapshots_core_tables() -> None:
         await engine.dispose()
 
     assert all(value >= 0 for value in counts.values()), counts
-    report = Path("/tmp/telegram-file-store-pytest-backup-report.txt")
+    report = Path(tempfile.gettempdir()) / "telegram-file-store-pytest-backup-report.txt"
     report.write_text(
         "\n".join(f"row_count_{name}={value}" for name, value in counts.items()) + "\n",
         encoding="utf-8",
@@ -56,15 +58,19 @@ def test_backup_script_is_executable_and_documents_restore() -> None:
 def test_backup_script_runs_when_database_configured() -> None:
     if not os.getenv("DATABASE_URL"):
         pytest.skip("DATABASE_URL is not configured")
+    if shutil.which("bash") is None:
+        pytest.skip("bash is not available on this platform")
+
+    report_path = str(Path(tempfile.gettempdir()) / "pytest-backup-drill-report.txt")
     result = subprocess.run(
         ["bash", "scripts/backup_restore_drill.sh"],
         check=False,
         capture_output=True,
         text=True,
-        env={**os.environ, "BACKUP_REPORT_PATH": "/tmp/pytest-backup-drill-report.txt"},
+        env={**os.environ, "BACKUP_REPORT_PATH": report_path},
     )
     assert result.returncode == 0, result.stdout + result.stderr
-    report = Path("/tmp/pytest-backup-drill-report.txt")
+    report = Path(report_path)
     assert report.is_file()
     body = report.read_text(encoding="utf-8")
     assert "database_reachable=1" in body

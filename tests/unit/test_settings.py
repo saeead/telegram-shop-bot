@@ -7,7 +7,7 @@ def test_settings_validate_required_bot_token(monkeypatch):
     monkeypatch.delenv("APP_ENV", raising=False)
     monkeypatch.delenv("TELEGRAM_BOT_TOKEN", raising=False)
 
-    settings = Settings(telegram_bot_token="test-token")
+    settings = Settings(telegram_bot_token="test-token", _env_file=None)
     assert settings.telegram_bot_token == "test-token"
     assert settings.app_env == "development"
 
@@ -16,7 +16,8 @@ def test_settings_reject_missing_bot_token(monkeypatch):
     monkeypatch.delenv("TELEGRAM_BOT_TOKEN", raising=False)
 
     try:
-        Settings()
+        # Disable .env so a local developer file cannot satisfy the required field.
+        Settings(_env_file=None)
     except ValidationError as exc:
         assert "telegram_bot_token" in str(exc)
     else:
