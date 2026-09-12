@@ -140,7 +140,9 @@ async def _handle_buy(
         async with session_factory() as session:
             commerce = commerce_factory(session)
             order = await commerce.create_order(customer_id, product_id, 1, idempotency_key)
-            payment = await commerce.create_payment(order.id, default_provider, payment_callback_url)
+            payment = await commerce.create_payment(
+                order.id, default_provider, payment_callback_url
+            )
     except CommerceError as exc:
         await callback.answer(str(exc), show_alert=True)
         return
