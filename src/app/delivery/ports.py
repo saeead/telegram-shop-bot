@@ -8,6 +8,10 @@ from uuid import UUID
 from app.delivery.domain import DeliveryRecord
 
 
+class DeliverySourceError(RuntimeError):
+    """Safe external-source failure suitable for retry/fallback."""
+
+
 class DeliveryRepositoryPort(Protocol):
     async def get(self, order_id: UUID, file_id: UUID) -> DeliveryRecord | None: ...
 
