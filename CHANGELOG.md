@@ -1,5 +1,18 @@
 # Changelog
 
+## Unreleased — Phase 5 Delivery & Commerce
+
+- Added an independent `DeliveryService` and delivery ports so fulfillment business logic is separated from payment providers and Telegram handlers.
+- Added private Archive/Backup delivery-source configuration and Telegram `copy_message` adapter with safe external-error translation.
+- Added deterministic multi-file main-file delivery with per-file tracking and idempotent retry behavior.
+- Added customer ownership, paid-order checks, and purchased-product-code authorization before delivery.
+- Added customer order-history/detail/retry service boundaries over the Commerce core.
+- Added delivery persistence with unique `(order_id, file_id)` protection and states `PENDING`, `PROCESSING`, `PARTIAL`, `DELIVERED`, and `FAILED`.
+- Added delivery recovery coverage for source failure, Archive→Backup fallback, partial delivery, duplicate delivery request, foreign order, unpaid order, and forged product code.
+- Added Alembic migration `0005_delivery`.
+- Added full purchase → payment verification → multi-file delivery E2E coverage.
+- Verified Phase 5 through GitHub Actions run `34711911244`: 56 tests passed, Alembic upgrade passed, Ruff check/format passed, mypy passed, compileall passed, and the E2E delivery flow passed.
+
 ## Unreleased — Phase 4 Orders & Payment
 
 - Added pure Order, OrderItem, Payment, and PaymentAttempt domain models with explicit lifecycle states.
@@ -53,4 +66,4 @@
 - Added standard verification harness and GitHub Actions CI with PostgreSQL and Redis services.
 - Verified Phase 1 through GitHub Actions CI run `34632397963`.
 
-No Delivery implementation is included in Phase 4.
+No production-ready claim is made until Phase 6 hardening is independently verified.
