@@ -10,21 +10,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from app.application.commerce_ports import CommerceRepositoryPort
-from app.domain.order import (
-    Order,
-    OrderItem,
-    OrderStatus,
-    Payment,
-    PaymentAttempt,
-    PaymentAttemptStatus,
-    PaymentStatus,
-)
-from app.infrastructure.models import (
-    OrderItemModel,
-    OrderModel,
-    PaymentAttemptModel,
-    PaymentModel,
-)
+from app.domain.order import Order, OrderItem, OrderStatus, Payment, PaymentAttempt, PaymentAttemptStatus, PaymentStatus
+from app.infrastructure.models import OrderItemModel, OrderModel, PaymentAttemptModel, PaymentModel
 
 
 class SqlAlchemyCommerceRepository(CommerceRepositoryPort):
@@ -52,6 +39,18 @@ class SqlAlchemyCommerceRepository(CommerceRepositoryPort):
             .where(OrderModel.idempotency_key == key)
         )
         return self._order_to_domain(model) if model else None
+
+    async def list_orders_for_customer(self, customer_telegram_id: int) -> list[Order]:
+        result = await self._session.scalars(
+            select(OrderModel)
+            .options(
+                selectinload(OrderModel.items),
+                selectinload(OrderModel.payments).selectinload(PaymentModel.attempts),
+            )
+            .where(OrderModel.customer_telegram_id == customer_telegram_id)
+            .order_by(OrderModel.created_at.desc())
+        )
+        return [self._order_to_domain(model) for model in result]
 
     async def save_order(self, order: Order) -> None:
         model = await self._session.get(OrderModel, order.id)
@@ -103,16 +102,11 @@ class SqlAlchemyCommerceRepository(CommerceRepositoryPort):
         )
         return self._payment_to_domain(model) if model else None
 
-    async def get_payment_by_provider_reference(
-        self, provider: str, reference: str
-    ) -> Payment | None:
+    async def get_payment_by_provider_reference(self, provider: str, reference: str) -> Payment | None:
         model = await self._session.scalar(
             select(PaymentModel)
             .options(selectinload(PaymentModel.attempts))
-            .where(
-                PaymentModel.provider == provider,
-                PaymentModel.provider_reference == reference,
-            )
+            .where(PaymentModel.provider == provider, PaymentModel.provider_reference == reference)
         )
         return self._payment_to_domain(model) if model else None
 
