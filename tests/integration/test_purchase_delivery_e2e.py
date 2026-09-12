@@ -30,10 +30,16 @@ class FakeCommerceRepo:
         return self.orders.get(order_id)
 
     async def get_order_by_idempotency_key(self, key: str):
-        return next((order for order in self.orders.values() if order.idempotency_key == key), None)
+        return next(
+            (order for order in self.orders.values() if order.idempotency_key == key), None
+        )
 
     async def list_orders_for_customer(self, customer_telegram_id: int):
-        return [order for order in self.orders.values() if order.customer_telegram_id == customer_telegram_id]
+        return [
+            order
+            for order in self.orders.values()
+            if order.customer_telegram_id == customer_telegram_id
+        ]
 
     async def save_order(self, order: Order):
         self.orders[order.id] = order
@@ -42,10 +48,19 @@ class FakeCommerceRepo:
         return self.payments.get(payment_id)
 
     async def get_payment_by_order(self, order_id: UUID):
-        return next((payment for payment in self.payments.values() if payment.order_id == order_id), None)
+        return next(
+            (payment for payment in self.payments.values() if payment.order_id == order_id), None
+        )
 
     async def get_payment_by_provider_reference(self, provider: str, reference: str):
-        return next((payment for payment in self.payments.values() if payment.provider == provider and payment.provider_reference == reference), None)
+        return next(
+            (
+                payment
+                for payment in self.payments.values()
+                if payment.provider == provider and payment.provider_reference == reference
+            ),
+            None,
+        )
 
     async def save_payment(self, payment):
         self.payments[payment.id] = payment
@@ -75,7 +90,11 @@ class FakeDeliveryRepo:
         return self.records.get((order_id, file_id))
 
     async def list_for_order(self, order_id):
-        return [record for (saved_order_id, _), record in self.records.items() if saved_order_id == order_id]
+        return [
+            record
+            for (saved_order_id, _), record in self.records.items()
+            if saved_order_id == order_id
+        ]
 
     async def save(self, record):
         self.records[(record.order_id, record.file_id)] = record
@@ -104,8 +123,12 @@ async def test_admin_to_store_buy_payment_verify_delivery() -> None:
         "IRR",
         status=ProductStatus.PUBLISHED,
         files=[
-            ProductFile("a", 101, 900, ProductFileType.ARCHIVE, ProductFileRole.MAIN, "one.stl", None, 10, 0),
-            ProductFile("b", 102, 900, ProductFileType.ARCHIVE, ProductFileRole.MAIN, "two.zip", None, 20, 1),
+            ProductFile(
+                "a", 101, 900, ProductFileType.ARCHIVE, ProductFileRole.MAIN, "one.stl", None, 10, 0
+            ),
+            ProductFile(
+                "b", 102, 900, ProductFileType.ARCHIVE, ProductFileRole.MAIN, "two.zip", None, 20, 1
+            ),
         ],
     )
     products = FakeProductRepo(product)
