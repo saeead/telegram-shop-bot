@@ -2,9 +2,10 @@
 
 from __future__ import annotations
 
+from uuid import uuid4
+
 from redis.asyncio import Redis
 from redis.exceptions import RedisError
-from uuid import uuid4
 
 
 _RELEASE_SCRIPT = """
