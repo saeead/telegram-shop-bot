@@ -1,19 +1,55 @@
 services:
+  app:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    environment:
+      APP_ENV: ${APP_ENV:-production}
+      LOG_LEVEL: ${LOG_LEVEL:-INFO}
+      TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN:?TELEGRAM_BOT_TOKEN is required}
+      TELEGRAM_ADMIN_IDS: ${TELEGRAM_ADMIN_IDS:?TELEGRAM_ADMIN_IDS is required}
+      TELEGRAM_STORE_CHANNEL_ID: ${TELEGRAM_STORE_CHANNEL_ID:?TELEGRAM_STORE_CHANNEL_ID is required}
+      TELEGRAM_ARCHIVE_CHANNEL_ID: ${TELEGRAM_ARCHIVE_CHANNEL_ID:?TELEGRAM_ARCHIVE_CHANNEL_ID is required}
+      TELEGRAM_BACKUP_CHANNEL_ID: ${TELEGRAM_BACKUP_CHANNEL_ID:?TELEGRAM_BACKUP_CHANNEL_ID is required}
+      DATABASE_URL: postgresql+asyncpg://postgres:${POSTGRES_PASSWORD:-postgres}@postgres:5432/telegram_file_store
+      REDIS_URL: redis://redis:6379/0
+      ZARINPAL_MERCHANT_ID: ${ZARINPAL_MERCHANT_ID:-}
+      ZARINPAL_SANDBOX: ${ZARINPAL_SANDBOX:-false}
+      PAYMENT_CALLBACK_URL: ${PAYMENT_CALLBACK_URL:-}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+
   postgres:
     image: postgres:17
     environment:
       POSTGRES_DB: telegram_file_store
       POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
     ports:
-      - "5432:5432"
+      - "127.0.0.1:5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d telegram_file_store"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 5s
 
   redis:
     image: redis:7-alpine
     ports:
-      - "6379:6379"
+      - "127.0.0.1:6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 5s
 
 volumes:
   postgres_data:
