@@ -12,6 +12,7 @@ class ProductStatus(StrEnum):
     DRAFT = "draft"
     READY = "ready"
     PUBLISHED = "published"
+    HIDDEN = "hidden"
     ARCHIVED = "archived"
 
 
@@ -149,6 +150,14 @@ class Product:
         self.status = ProductStatus.READY
 
     def mark_published(self) -> None:
-        if self.status is not ProductStatus.READY:
-            raise ValueError("only ready products can be published")
+        if self.status not in {ProductStatus.READY, ProductStatus.HIDDEN, ProductStatus.PUBLISHED}:
+            raise ValueError("only ready, hidden, or published products can be published")
         self.status = ProductStatus.PUBLISHED
+
+    def hide(self) -> None:
+        if self.status is not ProductStatus.PUBLISHED:
+            raise ValueError("only published products can be hidden")
+        self.status = ProductStatus.HIDDEN
+
+    def archive(self) -> None:
+        self.status = ProductStatus.ARCHIVED

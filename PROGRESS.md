@@ -1,59 +1,49 @@
 # PROGRESS
 
 ## Current Verified State
-- Phase: 1 — Foundation & Harness — verified and passing.
-- Repository state: Phase 1 implementation and verification evidence are complete on `phase-1-foundation`.
-- Standard verification: `pytest`, `ruff check .`, `ruff format --check .`, `mypy src`, `python -m compileall -q src`, and `./scripts/check.sh`.
-- Verification evidence: GitHub Actions CI run `34632397963` completed successfully on commit `61544abfac695081c272c584656f4bfa252ef5f2`.
-- Highest priority unfinished feature: `PRD-001`.
-- Production readiness: not applicable.
+- Phase: 4 — Orders & Payment — implementation in progress; final verification pending.
+- Repository state: `phase-4-orders-payment` branches from the verified Phase 3 head `b1ab44842442ea7eb29c3364ff170a04b43343d3`.
+- Phase 3 verification evidence: GitHub Actions CI run `34638030154` completed successfully.
+- Standard verification gate: `pytest`, `ruff check .`, `ruff format --check .`, `mypy src`, `python -m compileall -q src`, Alembic upgrade, and `./scripts/check.sh`.
+- Phase 4 must remain open for manual review; no merge is automatic.
+- Delivery logic is intentionally excluded from Phase 4.
 
 ## Phase status
 | Phase | Status | Exit condition |
 |---|---|---|
 | 1 Foundation & Harness | passing | FND-001..FND-004 passing with reproducible evidence |
-| 2 Product & Telegram Intake | not_started | admin can intake, classify, collect metadata, confirm, publish |
-| 3 Store & Admin | not_started | store browsing/search/admin management works |
-| 4 Orders & Payment | not_started | IRR + crypto abstraction and idempotent payment flow |
+| 2 Product & Telegram Intake | passing | admin can intake, classify, collect metadata, confirm, publish boundary |
+| 3 Store & Admin | passing | store browsing/admin management works and full verification passes |
+| 4 Orders & Payment | in_progress | order lifecycle, price snapshots, idempotent payments, Zarinpal verification, callback security, and full checks pass |
 | 5 Delivery & Commerce | not_started | paid multi-file delivery is reliable and auditable |
 | 6 Hardening & Scale | not_started | security, observability, recovery, webhooks, production readiness |
 
-## Feature evidence
-### FND-001
-- Validated Pydantic Settings configuration and required Telegram bot token validation implemented.
-- Application logging/bootstrap path and configuration tests implemented.
-- Status: `passing`.
-- Evidence: CI run `34632397963` completed successfully.
+## Phase 4 implementation record
+### PAY-001 — Orders and Zarinpal
+- Added pure `Order`, `OrderItem`, `Payment`, and `PaymentAttempt` domain models.
+- Added explicit order lifecycle: pending payment, processing, paid, failed, cancelled, expired.
+- Order items snapshot product name, unit price, currency, and quantity at order creation.
+- Added order and payment idempotency keys and provider-reference uniqueness boundaries.
+- Added provider-agnostic `PaymentProvider` port with create, verify, and refund operations.
+- Added `CommerceService` for order creation, payment creation, callback verification, replay protection, and expiry handling.
+- Added real Zarinpal REST v4 request/verify adapter with strict response validation and safe metadata.
+- Added untrusted Zarinpal callback parsing and validation.
+- No delivery invocation exists in payment handling.
 
-### FND-002
-- SQLAlchemy async engine/session factory and database health check implemented.
-- Async Alembic environment and empty baseline migration implemented.
-- PostgreSQL integration health test implemented.
-- Status: `passing`.
-- Evidence: CI run `34632397963` successfully started PostgreSQL services, ran `alembic upgrade head`, and completed `scripts/check.sh`.
+### PAY-002 — Crypto abstraction
+- Added `CryptoPaymentProvider` abstraction over the generic provider port.
+- No concrete crypto gateway was selected or coupled to the Order domain.
 
-### FND-003
-- Application `CachePort` and Redis adapter implemented for transient state, TTL cache, locks, and idempotency storage semantics.
-- Redis health/integration test implemented.
-- Domain has no Redis dependency.
-- Status: `passing`.
-- Evidence: CI run `34632397963` successfully started Redis services and completed `scripts/check.sh`.
+### Persistence
+- Added Alembic migration `0004_orders_payment`.
+- Added PostgreSQL persistence models for orders, order items, payments, and payment attempts.
+- Payment attempts retain provider, provider reference, amount, status, timestamps, and safe metadata; no credentials are persisted.
 
-### FND-004
-- Standard harness covers pytest, Ruff, format, mypy, compileall, and feature-state validation.
-- GitHub Actions CI provisions PostgreSQL and Redis and runs migrations plus the standard checks.
-- Status: `passing`.
-- Evidence: CI run `34632397963` completed successfully with all verify steps green.
-
-## Session records
-### Session 002 — Phase 1 foundation infrastructure
-- Completed PostgreSQL infrastructure, async Alembic setup, Redis abstraction/adapter, integration health tests, harness verification command, CI workflow, database-name alignment, baseline migration, and type/lint fixes.
-- Final Phase 1 verification is recorded from GitHub Actions CI run `34632397963`.
-
-### Session 003 — Phase 1 verification gate
-- CI run `34632397963` completed successfully for the Phase 1 branch.
-- FND-001..FND-004 are now truthfully marked `passing` with executable evidence.
-- Phase 2 is authorized to begin, but its features remain `not_started` on the Phase 1 branch.
+### Tests
+- Added order lifecycle and expiry tests.
+- Added fake-provider tests for successful payment, failed payment, duplicate callbacks, invalid callbacks, amount mismatch, provider timeout, provider retry, already-paid order, and idempotent order/payment creation.
+- Added Zarinpal adapter response-validation tests.
+- Added callback parser security tests.
 
 ## Phase gate
-Phase 2 may begin because FND-001, FND-002, FND-003, and FND-004 are independently verified and marked `passing` with CI evidence.
+Phase 4 remains `in_progress`. Do not start Phase 5 until the final CI verification is green and PAY-001 has executable evidence.

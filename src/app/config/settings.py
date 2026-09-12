@@ -23,9 +23,14 @@ class Settings(BaseSettings):
     log_level: str = Field(default="INFO", pattern="^(DEBUG|INFO|WARNING|ERROR|CRITICAL)$")
     telegram_bot_token: str = Field(min_length=1)
     telegram_admin_ids: str = ""
+    telegram_store_channel_id: int = 0
 
     database_url: str = "postgresql+asyncpg://postgres:postgres@localhost:5432/telegram_file_store"
     redis_url: str = "redis://localhost:6379/0"
+
+    zarinpal_merchant_id: str = ""
+    zarinpal_sandbox: bool = True
+    payment_callback_url: str = ""
 
     @property
     def admin_ids(self) -> frozenset[int]:

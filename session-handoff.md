@@ -1,53 +1,50 @@
 # Session Handoff
 
 ## Where we are
-Phase 1 — Foundation & Harness is verified and passing. Phase 2 — Product Intake & Domain is authorized to begin after the Phase 1 branch is preserved as the verified foundation.
+Phase 3 — Store & Admin is verified and passing. Phase 4 — Orders & Payment is active on `phase-4-orders-payment`, branched from verified Phase 3 head `b1ab44842442ea7eb29c3364ff170a04b43343d3`.
 
-## Active feature state
-No Phase 2 feature is `in_progress` on this Phase 1 branch. FND-001..FND-004 are `passing`; PRD-001 and PRD-002 remain `not_started` until the Phase 2 branch begins.
+## Verified Phase 3 evidence
+- GitHub Actions CI run: `34638030154`
+- Phase 3 head: `b1ab44842442ea7eb29c3364ff170a04b43343d3`
+- CI completed successfully with the repository verification workflow.
 
-## Phase 1 verification evidence
-- GitHub Actions CI run: `34632397963`
-- Verified implementation commit: `61544abfac695081c272c584656f4bfa252ef5f2`
-- CI verify job completed successfully.
-- The verify job installed dependencies, ran `alembic upgrade head`, and ran `scripts/check.sh` with PostgreSQL and Redis service containers.
-- FND-001..FND-004 are recorded as `passing` in `feature_list.json`.
+## Phase 4 implemented scope
+- Pure Order, OrderItem, Payment, and PaymentAttempt domain models.
+- Explicit order lifecycle with payment processing, paid, failed, cancelled, and expired states.
+- Price snapshots in OrderItem so Product price changes cannot alter historical orders.
+- Order and payment idempotency boundaries.
+- Provider-agnostic PaymentProvider port with create, verify, and refund.
+- Commerce application service for order creation, payment creation, callback verification, expiry, replay protection, and failure handling.
+- Real Zarinpal REST API v4 request/verify adapter with response validation.
+- Untrusted callback parsing and checks for order, provider, authority, amount, state, and replay.
+- Payment attempt ledger persistence with safe metadata only.
+- CryptoPaymentProvider abstraction; concrete provider deliberately deferred.
+- Alembic migration `0004_orders_payment`.
+- Fake-provider, Zarinpal adapter, callback parser, lifecycle, and persistence-oriented unit coverage.
 
-## Phase 2 authorization
-The Phase 1 gate is closed successfully. The next branch should start from the final verified Phase 1 commit and implement only Phase 2 scope.
+## Phase 4 constraints
+- Payment credentials, merchant secrets, card data, and sensitive payment data must never be stored.
+- Browser/provider callback is never treated as proof of payment; provider verification is required.
+- Already-paid orders are terminal and repeated callbacks must not trigger another verification or payment transition.
+- No Delivery/fulfillment logic is allowed in Phase 4 payment handlers.
+- Domain code must remain independent of aiogram, SQLAlchemy, Redis, and payment SDKs.
+- No concrete crypto provider is selected in this phase.
 
-## Phase 2 scope
-- Build Product aggregate and related domain concepts.
-- Implement ProductFile/ProductPreview/Category/Tag/ProductStatus/ProductIntake concepts.
-- Implement explicit intake state machine with valid transitions and failure states.
-- Implement classification of Telegram-forwarded media/files without storing file bytes on the application server.
-- Implement product-code generation and metadata validation.
-- Implement application orchestration for admin intake, metadata collection, review, confirmation, edit, and cancellation.
-- Implement Telegram adapter boundary and fake adapter tests where practical.
-- Add PostgreSQL persistence for Phase 2 business data only.
-- Use Redis only through the existing application port/abstraction for FSM/transient intake state.
-
-## Explicitly out of scope
-- Customer purchase flow.
-- Payment/Zarinpal/crypto integration.
-- Delivery/fulfillment.
-- Store publication UX beyond the Phase 2 confirmation/publishing boundary needed by the intake use case.
-- WooCommerce/webhook integration.
-
-## Required architecture
-`presentation/telegram -> application -> domain`
-`infrastructure -> application/domain`
-`domain -> nothing external`
-
-Domain must not import aiogram, Telegram Bot API, SQLAlchemy, Redis, Zarinpal, or crypto SDKs.
-
-## Required verification before Phase 2 completion
+## Verification gate
+Before Phase 4 can be marked passing:
 - `pytest`
 - `ruff check .`
 - `ruff format --check .`
 - `mypy src`
-- Integration coverage for persistence, intake state, Redis FSM, and Telegram adapter boundary.
-- Record executable evidence in `feature_list.json` and `PROGRESS.md`.
+- `python -m compileall -q src`
+- Alembic/PostgreSQL integration via CI.
+- Verify fake-provider success/failure, duplicate callback, invalid callback, amount mismatch, expiry, provider timeout/retry, and already-paid behavior.
+- Verify Zarinpal external response validation.
+
+## Current state
+- Phase 4 is `in_progress` until final CI is green.
+- PAY-001 remains the active feature; PAY-002 crypto abstraction is implemented but no production provider is selected.
+- PR for Phase 4 must remain open for manual approval and must not be merged automatically.
 
 ## Next action
-Create the Phase 2 branch from the verified Phase 1 head, set exactly one Phase 2 feature to `in_progress`, and implement `PRD-001` first. Then implement `PRD-002`. Do not start Phase 3 until Phase 2 is verified.
+Run the Phase 4 CI verification. Fix every failure directly on `phase-4-orders-payment`. Only after the complete verification gate is green should PAY-001 be marked passing and Phase 4 closed. Do not start Phase 5 until then.
