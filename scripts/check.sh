@@ -19,3 +19,4 @@ for f in data['features']:
         assert f['evidence'].strip(), f"Passing feature lacks evidence: {f['id']}"
 print('Harness state validation passed.')
 PY
+python scripts/fresh_agent_check.py
