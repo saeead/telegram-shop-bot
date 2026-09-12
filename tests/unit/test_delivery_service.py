@@ -1,5 +1,5 @@
 from decimal import Decimal
-from uuid import UUID, uuid4
+from uuid import UUID
 
 import pytest
 
@@ -54,7 +54,9 @@ class FakeSource:
         self.calls: list[tuple[int, int, int]] = []
         self.next_message = 100
 
-    async def copy_to_customer(self, source_chat_id: int, source_message_id: int, customer_telegram_id: int) -> int:
+    async def copy_to_customer(
+        self, source_chat_id: int, source_message_id: int, customer_telegram_id: int
+    ) -> int:
         self.calls.append((source_chat_id, source_message_id, customer_telegram_id))
         if source_chat_id in self.failures:
             raise TimeoutError("telegram timeout")
@@ -78,21 +80,39 @@ class FakeLock:
 
 def make_fixture() -> tuple[Product, Order, FakeDeliveryRepo, FakeSource, DeliveryService]:
     files = [
-        ProductFile("f1", 20, 900, ProductFileType.ARCHIVE, ProductFileRole.MAIN, "a.stl", None, 10, 0),
-        ProductFile("f2", 21, 900, ProductFileType.ARCHIVE, ProductFileRole.MAIN, "b.zip", None, 20, 1),
+        ProductFile(
+            "f1", 20, 900, ProductFileType.ARCHIVE, ProductFileRole.MAIN, "a.stl", None, 10, 0
+        ),
+        ProductFile(
+            "f2", 21, 900, ProductFileType.ARCHIVE, ProductFileRole.MAIN, "b.zip", None, 20, 1
+        ),
     ]
-    product = Product("P-001", "Test Product", Decimal(1000), "IRR", status=ProductStatus.PUBLISHED, files=files)
-    order = Order(777, "IRR", [OrderItem(product.id, product.name, product.price, product.currency)], idempotency_key="order-1")
+    product = Product(
+        "P-001",
+        "Test Product",
+        Decimal(1000),
+        "IRR",
+        status=ProductStatus.PUBLISHED,
+        files=files,
+    )
+    order = Order(
+        777,
+        "IRR",
+        [OrderItem(product.id, product.name, product.price, product.currency)],
+        idempotency_key="order-1",
+    )
     order.mark_paid()
     repo = FakeDeliveryRepo()
     source = FakeSource()
-    service = DeliveryService(FakeProducts(product), FakeCommerce(order), repo, source, FakeLock(), 900, 901)
+    service = DeliveryService(
+        FakeProducts(product), FakeCommerce(order), repo, source, FakeLock(), 900, 901
+    )
     return product, order, repo, source, service
 
 
 @pytest.mark.asyncio
 async def test_delivers_all_main_files_in_deterministic_order() -> None:
-    product, order, repo, source, service = make_fixture()
+    _, order, repo, source, service = make_fixture()
     summary = await service.deliver(order.id, order.customer_telegram_id)
     assert summary.status is DeliveryStatus.DELIVERED
     assert summary.delivered == 2
@@ -153,7 +173,10 @@ async def test_unpaid_order_cannot_be_delivered() -> None:
 @pytest.mark.asyncio
 async def test_product_code_must_belong_to_paid_order() -> None:
     product, order, _, _, service = make_fixture()
-    assert await service.validate_product_code(product.product_code, order.id, order.customer_telegram_id) == product.id
+    assert (
+        await service.validate_product_code(product.product_code, order.id, order.customer_telegram_id)
+        == product.id
+    )
     with pytest.raises(DeliveryError, match="not part"):
         await service.validate_product_code("OTHER", order.id, order.customer_telegram_id)
 
