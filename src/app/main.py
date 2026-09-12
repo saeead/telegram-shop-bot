@@ -4,10 +4,15 @@ from __future__ import annotations
 
 import asyncio
 import logging
+from collections.abc import Callable
+from typing import Any
 from urllib.parse import urlsplit
 
 from aiohttp import web
+from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
+from app.application.intake_service import ProductIntakeService
+from app.application.store_service import StoreService
 from app.bootstrap import AppRuntime, build_runtime
 from app.config.settings import Settings, get_settings
 from app.infrastructure.logging.setup import configure_logging
@@ -17,6 +22,10 @@ from app.presentation.payment_webhook import create_payment_app_from_runtime
 from app.presentation.store_router import create_store_router
 
 logger = logging.getLogger(__name__)
+
+SessionFactory = async_sessionmaker[AsyncSession]
+StoreFactory = Callable[[AsyncSession], StoreService]
+IntakeFactory = Callable[[AsyncSession], ProductIntakeService]
 
 
 def main() -> None:
@@ -55,16 +64,16 @@ def _register_routers(runtime: AppRuntime) -> None:
     settings = runtime.settings
     session_factory = runtime.session_factory
 
-    def session_store(session):  # type: ignore[no-untyped-def]
+    def session_store(session: AsyncSession) -> StoreService:
         return runtime.store_service(session)
 
-    def session_commerce(session):  # type: ignore[no-untyped-def]
+    def session_commerce(session: AsyncSession) -> Any:
         return runtime.commerce_service(session)
 
-    def session_delivery(session):  # type: ignore[no-untyped-def]
+    def session_delivery(session: AsyncSession) -> Any:
         return runtime.delivery_service(session)
 
-    def session_intake(session):  # type: ignore[no-untyped-def]
+    def session_intake(session: AsyncSession) -> ProductIntakeService:
         return runtime.intake_service(session)
 
     runtime.dispatcher.include_router(
@@ -83,12 +92,16 @@ def _register_routers(runtime: AppRuntime) -> None:
     )
 
 
-def _wrap_admin_router(session_factory, store_factory, settings):  # type: ignore[no-untyped-def]
+def _wrap_admin_router(
+    session_factory: SessionFactory,
+    store_factory: StoreFactory,
+    settings: Settings,
+) -> Any:
     """Admin router expects a long-lived service; bridge with session-scoped proxy."""
 
     class _SessionStoreProxy:
-        def __getattr__(self, name: str):
-            async def method(*args, **kwargs):  # type: ignore[no-untyped-def]
+        def __getattr__(self, name: str) -> Callable[..., Any]:
+            async def method(*args: Any, **kwargs: Any) -> Any:
                 async with session_factory() as session:
                     service = store_factory(session)
                     result = getattr(service, name)(*args, **kwargs)
@@ -101,10 +114,14 @@ def _wrap_admin_router(session_factory, store_factory, settings):  # type: ignor
     return create_admin_router(_SessionStoreProxy(), settings)  # type: ignore[arg-type]
 
 
-def _wrap_intake_router(session_factory, intake_factory, settings):  # type: ignore[no-untyped-def]
+def _wrap_intake_router(
+    session_factory: SessionFactory,
+    intake_factory: IntakeFactory,
+    settings: Settings,
+) -> Any:
     class _SessionIntakeProxy:
-        def __getattr__(self, name: str):
-            async def method(*args, **kwargs):  # type: ignore[no-untyped-def]
+        def __getattr__(self, name: str) -> Callable[..., Any]:
+            async def method(*args: Any, **kwargs: Any) -> Any:
                 async with session_factory() as session:
                     service = intake_factory(session)
                     result = getattr(service, name)(*args, **kwargs)
