@@ -174,7 +174,9 @@ async def test_unpaid_order_cannot_be_delivered() -> None:
 async def test_product_code_must_belong_to_paid_order() -> None:
     product, order, _, _, service = make_fixture()
     assert (
-        await service.validate_product_code(product.product_code, order.id, order.customer_telegram_id)
+        await service.validate_product_code(
+            product.product_code, order.id, order.customer_telegram_id
+        )
         == product.id
     )
     with pytest.raises(DeliveryError, match="not part"):
