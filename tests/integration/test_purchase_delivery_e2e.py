@@ -30,9 +30,7 @@ class FakeCommerceRepo:
         return self.orders.get(order_id)
 
     async def get_order_by_idempotency_key(self, key: str):
-        return next(
-            (order for order in self.orders.values() if order.idempotency_key == key), None
-        )
+        return next((order for order in self.orders.values() if order.idempotency_key == key), None)
 
     async def list_orders_for_customer(self, customer_telegram_id: int):
         return [
