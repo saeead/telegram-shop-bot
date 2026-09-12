@@ -1,5 +1,6 @@
-import pytest
 from uuid import uuid4
+
+import pytest
 
 from app.presentation.admin_router import _parse_uuid
 from app.telegram.callbacks import parse_callback
