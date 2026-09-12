@@ -20,6 +20,10 @@ class AdminEditForm(StatesGroup):
     VALUE = State()
 
 
+_MAX_TEXT_INPUT = 512
+_MAX_TAGS = 32
+
+
 def create_admin_router(service: StoreService, settings: Settings) -> Router:
     router = Router(name="admin-store")
 
@@ -68,7 +72,11 @@ def create_admin_router(service: StoreService, settings: Settings) -> Router:
             )
             return
         if data.action == "admin_product":
-            await _show_product(callback, service, actor, UUID(data.value))
+            product_id = _parse_uuid(data.value)
+            if product_id is None:
+                await callback.answer("Invalid product", show_alert=True)
+                return
+            await _show_product(callback, service, actor, product_id)
             return
         await callback.answer("Unknown admin action", show_alert=True)
 
@@ -94,7 +102,10 @@ def create_admin_router(service: StoreService, settings: Settings) -> Router:
         }:
             await callback.answer("Unknown product action", show_alert=True)
             return
-        product_id = UUID(data.value)
+        product_id = _parse_uuid(data.value)
+        if product_id is None:
+            await callback.answer("Invalid product", show_alert=True)
+            return
         if data.action == "product_hide":
             await service.hide(actor, product_id)
             await callback.answer("Hidden")
@@ -125,20 +136,29 @@ def create_admin_router(service: StoreService, settings: Settings) -> Router:
         data = await state.get_data()
         field = str(data.get("field", ""))
         value = message.text or ""
+        if len(value) > _MAX_TEXT_INPUT:
+            await message.answer("Input is too long.")
+            return
+        product_id = _parse_uuid(str(data.get("product_id", "")))
+        if product_id is None:
+            await state.clear()
+            await message.answer("The edit session is invalid or expired.")
+            return
         try:
             if field == "price":
                 changes = ProductEdit(price=Decimal(value.strip()))
             elif field == "name":
-                changes = ProductEdit(name=value)
+                changes = ProductEdit(name=value.strip())
             elif field == "category":
-                changes = ProductEdit(category=value)
+                changes = ProductEdit(category=value.strip())
             elif field == "tags":
-                changes = ProductEdit(
-                    tags=tuple(tag.strip() for tag in value.split(",") if tag.strip())
-                )
+                tags = tuple(tag.strip() for tag in value.split(",") if tag.strip())
+                if len(tags) > _MAX_TAGS:
+                    raise ValueError("Too many tags.")
+                changes = ProductEdit(tags=tags)
             else:
                 raise ValueError("unsupported edit field")
-            await service.edit(actor, UUID(str(data["product_id"])), changes)
+            await service.edit(actor, product_id, changes)
         except (InvalidOperation, ValueError) as exc:
             await message.answer(str(exc) or "Invalid value.")
             return
@@ -146,6 +166,13 @@ def create_admin_router(service: StoreService, settings: Settings) -> Router:
         await message.answer(f"{field.title()} updated.")
 
     return router
+
+
+def _parse_uuid(value: str) -> UUID | None:
+    try:
+        return UUID(value)
+    except (ValueError, AttributeError, TypeError):
+        return None
 
 
 def _admin_keyboard() -> InlineKeyboardMarkup:
