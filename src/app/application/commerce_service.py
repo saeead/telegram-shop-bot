@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import logging
 from datetime import datetime
 from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
 from uuid import UUID
@@ -23,6 +24,7 @@ from app.domain.order import (
     PaymentAttemptStatus,
     PaymentStatus,
 )
+from app.infrastructure.observability import increment_metric, log_event
 
 
 class CommerceError(ValueError):
@@ -73,6 +75,8 @@ class CommerceService:
         )
         await self._repository.save_order(order)
         await self._repository.commit()
+        increment_metric("orders_total")
+        log_event(logging.getLogger(__name__), "order_created", order_id=str(order.id))
         return order
 
     async def create_payment(
@@ -154,6 +158,7 @@ class CommerceService:
             await self._repository.save_payment(payment)
             await self._repository.save_order(order)
             await self._repository.commit()
+            increment_metric("payment_failures_total")
             raise
         except Exception:
             payment.attempts[-1] = PaymentAttempt(
@@ -169,6 +174,7 @@ class CommerceService:
             await self._repository.save_payment(payment)
             await self._repository.save_order(order)
             await self._repository.commit()
+            increment_metric("payment_failures_total")
             raise
 
         payment.attempts[-1] = PaymentAttempt(
@@ -234,6 +240,7 @@ class CommerceService:
             await self._repository.save_payment(payment)
             await self._repository.save_order(order)
             await self._repository.commit()
+            increment_metric("payment_failures_total")
             return False
         if not result.provider_reference:
             raise CommerceError("provider verification omitted reference")
@@ -253,6 +260,8 @@ class CommerceService:
         await self._repository.save_payment(payment)
         await self._repository.save_order(order)
         await self._repository.commit()
+        increment_metric("payments_total")
+        log_event(logging.getLogger(__name__), "payment_verified", order_id=str(order.id))
         return True
 
     async def get_order(self, order_id: UUID) -> Order:
