@@ -1,18 +1,15 @@
 # PROGRESS
 
 ## Current Verified State
-- Phase: 6 — Hardening & Production — implementation in progress.
-- Phase 5 — Delivery & Commerce is verified and passing.
-- Product runtime (bot entrypoint, buy flow, payment webhook + auto-delivery) is merged to `main` via PR #10.
-- Phase 6 security/ops baseline is merged to `main` via PR #9.
-- Phase 6 failure-injection + concurrency unit suite is merged to `main` via PR #11.
-- Phase 5 CI evidence: GitHub Actions run `34711911244` completed successfully on commit `abde684c01174535fe7b0fd17d52a10d6a211b7a`.
-- Phase 5 verification: 56 tests passed, Alembic upgraded through `0005_delivery`, Ruff check/format passed, mypy passed, compileall passed, and the full purchase → payment verification → multi-file delivery E2E passed.
-- Phase 6 failure/concurrency CI evidence: GitHub Actions run `34717314211` completed successfully on PR #11 head `3d702a2` (78 tests passed including 9 failure-injection/concurrency tests; Ruff check/format, mypy, compileall, harness validation).
-- Covered failure/concurrency scenarios (unit): concurrent delivery lock, concurrent retry after partial failure, Redis lock failure surface, concurrent payment callbacks, verify failure→retry, provider create timeout, Telegram one-shot failure + retry, malicious callback rejection, concurrent webhook callbacks.
-- Phase 6 standard verification gate remains `pytest`, `ruff check .`, `ruff format --check .`, `mypy src`, `python -m compileall -q src`, plus Alembic/PostgreSQL/Redis integration and deployment smoke testing when applicable.
-- Phase 6 must not be marked passing merely because code exists; every Definition of Done item needs executable evidence.
-- `OPS-001` remains `in_progress` on `main` until backup/restore, deploy smoke, observability metrics, Redis/DB failure integration, and fresh-agent requirements also have evidence.
+- Phase: 6 — Hardening & Production — implementation in progress (`OPS-001`).
+- Phase 5 verified; product runtime on main (PR #10); security baseline on main (PR #9); failure-injection suite on main (PR #11, CI `34717314211`).
+- Branch `phase-6-ops-remaining` adds executable coverage for remaining OPS gaps:
+  - Backup drill: `scripts/backup_restore_drill.sh` + `tests/integration/test_backup_restore_drill.py`
+  - Deploy smoke: `scripts/deploy_smoke.sh`
+  - Infra failure modes: `tests/integration/test_infra_failure_modes.py` (unreachable DB/Redis health, lock after key loss)
+  - Observability wiring: order/payment/delivery metrics at service boundaries + unit coverage
+  - Fresh-agent: `scripts/fresh_agent_check.py` + `docs/production/fresh-agent.md` (also run from `scripts/check.sh`)
+- Production Ready is **not** claimed until CI is green on this branch and evidence is recorded on main.
 
 ## Phase status
 | Phase | Status | Exit condition |
@@ -24,49 +21,5 @@
 | 5 Delivery & Commerce | passing | paid multi-file delivery is reliable, secure, retryable, auditable, and E2E verified |
 | 6 Hardening & Scale | in_progress | security, observability, recovery, webhooks, production readiness |
 
-## Phase 6 active scope
-### Security
-- Admin authorization and callback/webhook validation audit.
-- Secret handling and environment isolation audit.
-- Telegram input validation and file access control.
-- Rate limiting and replay/idempotency review.
-- Sensitive logging review: no tokens, credentials, payment secrets, or raw provider payloads in logs.
-
-### Reliability
-- External-service timeout, retry, exponential backoff, circuit/failure handling, and idempotency review.
-- Verify duplicate-safe Order, Payment, Publication, and Delivery operations.
-
-### Redis
-- Distributed locks, FSM state, idempotency, TTL, invalidation, and Redis-failure behavior.
-
-### Database
-- Indexes, foreign keys, constraints, transaction boundaries, migration safety, connection pooling, and important query review.
-
-### Observability
-- Structured logs with correlation IDs and traceable commerce events.
-- Metrics for orders, payments, payment failures, delivery, delivery failures, and Telegram API errors where useful.
-
-### Health
-- Application, PostgreSQL, and Redis health checks without business side effects.
-
-### Testing
-- Unit/integration/E2E plus payment timeout, Telegram failure, Redis restart, DB failure, duplicate callbacks/delivery, partial delivery, invalid admin callback, malicious customer callback, and concurrency scenarios.
-- **Done (partial):** unit failure-injection + concurrency suite merged with CI evidence (`34717314211`).
-- **Still open:** Redis restart / DB failure integration under real services; backup/restore drill; deploy smoke.
-
-### Backup/recovery
-- PostgreSQL backup, restore, migration recovery, and incident-recovery documentation/testing.
-- Telegram storage references must not be the only source of recoverable business metadata.
-
-### Production deployment
-- Docker/runtime configuration, environment variables, database, Redis, bot, migrations, deployment, rollback, backup, restore, monitoring, logs, and incident recovery.
-
-### Future web/WooCommerce architecture
-- Keep Commerce Core provider/adapter agnostic so Telegram, Web, WooCommerce, and external webhooks can reuse business logic without duplicating it.
-- Do not prematurely implement a concrete WooCommerce integration.
-
-### Fresh-agent test
-A new agent with repository access only must be able to identify project purpose, architecture, execution/testing procedure, verified state, remaining features, decisions, blockers, and next action.
-
 ## Phase 6 gate
-Phase 6 remains `in_progress`. Do not claim production-ready until all security, reliability, Redis, database, observability, health, failure/concurrency, backup/restore, deployment, future-integration architecture, and fresh-agent requirements are independently verified with evidence.
+Do not claim production-ready until all security, reliability, Redis, database, observability, health, failure/concurrency, backup/restore, deployment, and fresh-agent requirements are independently verified with evidence.
