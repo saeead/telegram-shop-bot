@@ -8,7 +8,7 @@ from app.application.catalog_ports import ProductRepository
 from app.application.commerce_ports import CommerceRepositoryPort
 from app.delivery.domain import DeliveryRecord, DeliveryStatus, DeliverySummary
 from app.delivery.ports import DeliveryLockPort, DeliveryRepositoryPort, DeliverySourcePort
-from app.domain.order import OrderStatus
+from app.domain.order import Order, OrderStatus
 from app.domain.product import ProductFile
 
 
@@ -57,7 +57,9 @@ class DeliveryService:
                 product = await self._products.get(item.product_id)
                 if product is None:
                     raise DeliveryError("purchased product is unavailable")
-                await self._deliver_product(order_id, customer_telegram_id, product.id, product.main_files)
+                await self._deliver_product(
+                    order_id, customer_telegram_id, product.id, product.main_files
+                )
             return await self._summary(order_id)
         finally:
             if self._lock is not None and acquired:
@@ -66,16 +68,18 @@ class DeliveryService:
     async def retry(self, order_id: UUID, customer_telegram_id: int) -> DeliverySummary:
         return await self.deliver(order_id, customer_telegram_id)
 
-    async def get_history(self, customer_telegram_id: int) -> list[object]:
+    async def get_history(self, customer_telegram_id: int) -> list[Order]:
         return await self._commerce.list_orders_for_customer(customer_telegram_id)
 
-    async def get_order_details(self, order_id: UUID, customer_telegram_id: int):
+    async def get_order_details(self, order_id: UUID, customer_telegram_id: int) -> Order:
         order = await self._commerce.get_order(order_id)
         if order is None or order.customer_telegram_id != customer_telegram_id:
             raise DeliveryError("order not found")
         return order
 
-    async def validate_product_code(self, product_code: str, order_id: UUID, customer_telegram_id: int) -> UUID:
+    async def validate_product_code(
+        self, product_code: str, order_id: UUID, customer_telegram_id: int
+    ) -> UUID:
         order = await self.get_order_details(order_id, customer_telegram_id)
         product = await self._products.get_by_code(product_code.strip().upper())
         if product is None or product.id not in {item.product_id for item in order.items}:
@@ -92,7 +96,10 @@ class DeliveryService:
         files: list[ProductFile],
     ) -> None:
         ordered_files = sorted(files, key=lambda item: (item.ordering, str(item.id)))
-        existing = {record.file_id: record for record in await self._repository.list_for_order(order_id)}
+        existing = {
+            record.file_id: record
+            for record in await self._repository.list_for_order(order_id)
+        }
         records: list[DeliveryRecord] = []
         for file in ordered_files:
             record = existing.get(file.id)
@@ -109,7 +116,8 @@ class DeliveryService:
             try:
                 message_id = await self._copy_with_fallback(file, customer_telegram_id)
             except Exception as exc:
-                record.failed(self._safe_error(exc), partial=any(r.status is DeliveryStatus.DELIVERED for r in records))
+                partial = any(r.status is DeliveryStatus.DELIVERED for r in records)
+                record.failed(self._safe_error(exc), partial=partial)
                 await self._repository.save(record)
                 await self._repository.commit()
                 continue
@@ -138,7 +146,10 @@ class DeliveryService:
     async def _summary(self, order_id: UUID) -> DeliverySummary:
         records = await self._repository.list_for_order(order_id)
         delivered = sum(record.status is DeliveryStatus.DELIVERED for record in records)
-        failed = sum(record.status in {DeliveryStatus.FAILED, DeliveryStatus.PARTIAL} for record in records)
+        failed = sum(
+            record.status in {DeliveryStatus.FAILED, DeliveryStatus.PARTIAL}
+            for record in records
+        )
         pending = len(records) - delivered - failed
         if records and delivered == len(records):
             status = DeliveryStatus.DELIVERED
