@@ -89,3 +89,18 @@ Phase 4 marks an order paid but does not call or implement delivery. Fulfillment
 **Status:** accepted
 
 Phase 4 defines only a crypto-provider abstraction. A concrete gateway is intentionally deferred until a separate architecture decision selects the provider and settlement model.
+
+## ADR-019 — Delivery is tracked per purchased file
+**Status:** accepted
+
+A delivery record is uniquely identified by `(order_id, file_id)`. Successful files are never resent during normal retry, while failed/partial files remain independently retryable. This prevents one failed file from invalidating already delivered files.
+
+## ADR-020 — Customer authorization is based on paid order ownership
+**Status:** accepted
+
+Delivery requests must resolve the order, verify the requesting Telegram user owns it, require `PAID`, and verify any requested product code belongs to that order. Product codes alone are never authorization credentials.
+
+## ADR-021 — Delivery source failures are adapter concerns
+**Status:** accepted
+
+Archive/Backup Telegram failures are translated into a safe `DeliverySourceError`. The Delivery domain stores only safe failure text and never stores raw Telegram exceptions, tokens, or credentials.

@@ -1,12 +1,13 @@
 # PROGRESS
 
 ## Current Verified State
-- Phase: 4 — Orders & Payment — implementation in progress; final verification pending.
-- Repository state: `phase-4-orders-payment` branches from the verified Phase 3 head `b1ab44842442ea7eb29c3364ff170a04b43343d3`.
-- Phase 3 verification evidence: GitHub Actions CI run `34638030154` completed successfully.
-- Standard verification gate: `pytest`, `ruff check .`, `ruff format --check .`, `mypy src`, `python -m compileall -q src`, Alembic upgrade, and `./scripts/check.sh`.
-- Phase 4 must remain open for manual review; no merge is automatic.
-- Delivery logic is intentionally excluded from Phase 4.
+- Phase: 6 — Hardening & Production — implementation in progress.
+- Phase 5 — Delivery & Commerce is verified and passing.
+- Phase 5 CI evidence: GitHub Actions run `34711911244` completed successfully on commit `abde684c01174535fe7b0fd17d52a10d6a211b7a`.
+- Phase 5 verification: 56 tests passed, Alembic upgraded through `0005_delivery`, Ruff check/format passed, mypy passed, compileall passed, and the full purchase → payment verification → multi-file delivery E2E passed.
+- Phase 6 standard verification gate remains `pytest`, `ruff check .`, `ruff format --check .`, `mypy src`, `python -m compileall -q src`, plus Alembic/PostgreSQL/Redis integration and deployment smoke testing when applicable.
+- Phase 6 must not be marked passing merely because code exists; every Definition of Done item needs executable evidence.
+- Phase 6 branch: `phase-6-hardening-production`.
 
 ## Phase status
 | Phase | Status | Exit condition |
@@ -14,36 +15,51 @@
 | 1 Foundation & Harness | passing | FND-001..FND-004 passing with reproducible evidence |
 | 2 Product & Telegram Intake | passing | admin can intake, classify, collect metadata, confirm, publish boundary |
 | 3 Store & Admin | passing | store browsing/admin management works and full verification passes |
-| 4 Orders & Payment | in_progress | order lifecycle, price snapshots, idempotent payments, Zarinpal verification, callback security, and full checks pass |
-| 5 Delivery & Commerce | not_started | paid multi-file delivery is reliable and auditable |
-| 6 Hardening & Scale | not_started | security, observability, recovery, webhooks, production readiness |
+| 4 Orders & Payment | passing | order lifecycle, price snapshots, idempotent payments, Zarinpal verification, callback security, and full checks pass |
+| 5 Delivery & Commerce | passing | paid multi-file delivery is reliable, secure, retryable, auditable, and E2E verified |
+| 6 Hardening & Scale | in_progress | security, observability, recovery, webhooks, production readiness |
 
-## Phase 4 implementation record
-### PAY-001 — Orders and Zarinpal
-- Added pure `Order`, `OrderItem`, `Payment`, and `PaymentAttempt` domain models.
-- Added explicit order lifecycle: pending payment, processing, paid, failed, cancelled, expired.
-- Order items snapshot product name, unit price, currency, and quantity at order creation.
-- Added order and payment idempotency keys and provider-reference uniqueness boundaries.
-- Added provider-agnostic `PaymentProvider` port with create, verify, and refund operations.
-- Added `CommerceService` for order creation, payment creation, callback verification, replay protection, and expiry handling.
-- Added real Zarinpal REST v4 request/verify adapter with strict response validation and safe metadata.
-- Added untrusted Zarinpal callback parsing and validation.
-- No delivery invocation exists in payment handling.
+## Phase 6 active scope
+### Security
+- Admin authorization and callback/webhook validation audit.
+- Secret handling and environment isolation audit.
+- Telegram input validation and file access control.
+- Rate limiting and replay/idempotency review.
+- Sensitive logging review: no tokens, credentials, payment secrets, or raw provider payloads in logs.
 
-### PAY-002 — Crypto abstraction
-- Added `CryptoPaymentProvider` abstraction over the generic provider port.
-- No concrete crypto gateway was selected or coupled to the Order domain.
+### Reliability
+- External-service timeout, retry, exponential backoff, circuit/failure handling, and idempotency review.
+- Verify duplicate-safe Order, Payment, Publication, and Delivery operations.
 
-### Persistence
-- Added Alembic migration `0004_orders_payment`.
-- Added PostgreSQL persistence models for orders, order items, payments, and payment attempts.
-- Payment attempts retain provider, provider reference, amount, status, timestamps, and safe metadata; no credentials are persisted.
+### Redis
+- Distributed locks, FSM state, idempotency, TTL, invalidation, and Redis-failure behavior.
 
-### Tests
-- Added order lifecycle and expiry tests.
-- Added fake-provider tests for successful payment, failed payment, duplicate callbacks, invalid callbacks, amount mismatch, provider timeout, provider retry, already-paid order, and idempotent order/payment creation.
-- Added Zarinpal adapter response-validation tests.
-- Added callback parser security tests.
+### Database
+- Indexes, foreign keys, constraints, transaction boundaries, migration safety, connection pooling, and important query review.
 
-## Phase gate
-Phase 4 remains `in_progress`. Do not start Phase 5 until the final CI verification is green and PAY-001 has executable evidence.
+### Observability
+- Structured logs with correlation IDs and traceable commerce events.
+- Metrics for orders, payments, payment failures, delivery, delivery failures, and Telegram API errors where useful.
+
+### Health
+- Application, PostgreSQL, and Redis health checks without business side effects.
+
+### Testing
+- Unit/integration/E2E plus payment timeout, Telegram failure, Redis restart, DB failure, duplicate callbacks/delivery, partial delivery, invalid admin callback, malicious customer callback, and concurrency scenarios.
+
+### Backup/recovery
+- PostgreSQL backup, restore, migration recovery, and incident-recovery documentation/testing.
+- Telegram storage references must not be the only source of recoverable business metadata.
+
+### Production deployment
+- Docker/runtime configuration, environment variables, database, Redis, bot, migrations, deployment, rollback, backup, restore, monitoring, logs, and incident recovery.
+
+### Future web/WooCommerce architecture
+- Keep Commerce Core provider/adapter agnostic so Telegram, Web, WooCommerce, and external webhooks can reuse business logic without duplicating it.
+- Do not prematurely implement a concrete WooCommerce integration.
+
+### Fresh-agent test
+A new agent with repository access only must be able to identify project purpose, architecture, execution/testing procedure, verified state, remaining features, decisions, blockers, and next action.
+
+## Phase 6 gate
+Phase 6 remains `in_progress`. Do not claim production-ready until all security, reliability, Redis, database, observability, health, failure/concurrency, backup/restore, deployment, future-integration architecture, and fresh-agent requirements are independently verified with evidence.

@@ -53,6 +53,18 @@ class SqlAlchemyCommerceRepository(CommerceRepositoryPort):
         )
         return self._order_to_domain(model) if model else None
 
+    async def list_orders_for_customer(self, customer_telegram_id: int) -> list[Order]:
+        result = await self._session.scalars(
+            select(OrderModel)
+            .options(
+                selectinload(OrderModel.items),
+                selectinload(OrderModel.payments).selectinload(PaymentModel.attempts),
+            )
+            .where(OrderModel.customer_telegram_id == customer_telegram_id)
+            .order_by(OrderModel.created_at.desc())
+        )
+        return [self._order_to_domain(model) for model in result]
+
     async def save_order(self, order: Order) -> None:
         model = await self._session.get(OrderModel, order.id)
         if model is None:
@@ -109,10 +121,7 @@ class SqlAlchemyCommerceRepository(CommerceRepositoryPort):
         model = await self._session.scalar(
             select(PaymentModel)
             .options(selectinload(PaymentModel.attempts))
-            .where(
-                PaymentModel.provider == provider,
-                PaymentModel.provider_reference == reference,
-            )
+            .where(PaymentModel.provider == provider, PaymentModel.provider_reference == reference)
         )
         return self._payment_to_domain(model) if model else None
 
