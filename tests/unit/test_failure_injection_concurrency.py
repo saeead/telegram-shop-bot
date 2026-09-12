@@ -229,9 +229,7 @@ async def test_concurrent_delivery_only_one_acquires_lock() -> None:
     lock = ConcurrentLock()
     commerce = FakeCommerceRepo()
     commerce.orders[order.id] = order
-    service = DeliveryService(
-        FakeProducts(product), commerce, repo, source, lock, 900, 901
-    )
+    service = DeliveryService(FakeProducts(product), commerce, repo, source, lock, 900, 901)
 
     results = await asyncio.gather(
         service.deliver(order.id, order.customer_telegram_id),
@@ -261,9 +259,7 @@ async def test_concurrent_retry_after_partial_failure_is_safe() -> None:
     lock = ConcurrentLock()
     commerce = FakeCommerceRepo()
     commerce.orders[order.id] = order
-    service = DeliveryService(
-        FakeProducts(product), commerce, repo, source, lock, 900, 901
-    )
+    service = DeliveryService(FakeProducts(product), commerce, repo, source, lock, 900, 901)
 
     failed = await service.deliver(order.id, order.customer_telegram_id)
     assert failed.status is DeliveryStatus.FAILED
@@ -367,9 +363,7 @@ async def test_telegram_one_shot_failure_then_retry_delivers_remaining() -> None
     source = ControllableSource(fail_once=True)
     commerce = FakeCommerceRepo()
     commerce.orders[order.id] = order
-    service = DeliveryService(
-        FakeProducts(product), commerce, repo, source, ConcurrentLock(), 900, 901
-    )
+    service = DeliveryService(FakeProducts(product), commerce, repo, source, ConcurrentLock(), 900, 901)
     first = await service.deliver(order.id, order.customer_telegram_id)
     # First file fails once across archive+backup then may partial/fail; second may succeed
     assert first.delivered + first.failed + first.pending == 2
