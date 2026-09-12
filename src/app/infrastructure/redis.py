@@ -42,5 +42,5 @@ def create_redis_store(redis_url: str) -> RedisStore:
 async def check_redis_health(store: RedisStore) -> bool:
     try:
         return await store.ping()
-    except RedisError:
+    except (RedisError, OSError, TimeoutError):
         return False
