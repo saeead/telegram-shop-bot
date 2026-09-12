@@ -7,7 +7,12 @@ from uuid import UUID
 from app.application.catalog_ports import ProductRepository
 from app.application.commerce_ports import CommerceRepositoryPort
 from app.delivery.domain import DeliveryRecord, DeliveryStatus, DeliverySummary
-from app.delivery.ports import DeliveryLockPort, DeliveryRepositoryPort, DeliverySourcePort
+from app.delivery.ports import (
+    DeliveryLockPort,
+    DeliveryRepositoryPort,
+    DeliverySourceError,
+    DeliverySourcePort,
+)
 from app.domain.order import Order, OrderStatus
 from app.domain.product import ProductFile
 
@@ -115,7 +120,7 @@ class DeliveryService:
             await self._repository.save(record)
             try:
                 message_id = await self._copy_with_fallback(file, customer_telegram_id)
-            except Exception as exc:
+            except (DeliverySourceError, TimeoutError) as exc:
                 partial = any(r.status is DeliveryStatus.DELIVERED for r in records)
                 record.failed(self._safe_error(exc), partial=partial)
                 await self._repository.save(record)
@@ -131,13 +136,13 @@ class DeliveryService:
             channels = (file.telegram_chat_id,) + tuple(
                 channel for channel in channels if channel != file.telegram_chat_id
             )
-        last_error: Exception | None = None
+        last_error: DeliverySourceError | TimeoutError | None = None
         for channel_id in channels:
             try:
                 return await self._source.copy_to_customer(
                     channel_id, file.telegram_message_id, customer_telegram_id
                 )
-            except Exception as exc:
+            except (DeliverySourceError, TimeoutError) as exc:
                 last_error = exc
         if last_error is not None:
             raise last_error
