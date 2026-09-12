@@ -5,12 +5,14 @@
 - Phase 5 — Delivery & Commerce is verified and passing.
 - Product runtime (bot entrypoint, buy flow, payment webhook + auto-delivery) is merged to `main` via PR #10.
 - Phase 6 security/ops baseline is merged to `main` via PR #9.
+- Phase 6 failure-injection + concurrency unit suite is merged to `main` via PR #11.
 - Phase 5 CI evidence: GitHub Actions run `34711911244` completed successfully on commit `abde684c01174535fe7b0fd17d52a10d6a211b7a`.
 - Phase 5 verification: 56 tests passed, Alembic upgraded through `0005_delivery`, Ruff check/format passed, mypy passed, compileall passed, and the full purchase → payment verification → multi-file delivery E2E passed.
-- Phase 6 failure-injection + concurrency unit suite added on branch `phase-6-failure-concurrency` (`tests/unit/test_failure_injection_concurrency.py`, 9 tests): concurrent delivery lock, concurrent retry after partial failure, Redis lock failure surface, concurrent payment callbacks, verify failure→retry, provider create timeout, Telegram one-shot failure + retry, malicious callback rejection, concurrent webhook callbacks.
+- Phase 6 failure/concurrency CI evidence: GitHub Actions run `34717314211` completed successfully on PR #11 head `3d702a2` (78 tests passed including 9 failure-injection/concurrency tests; Ruff check/format, mypy, compileall, harness validation).
+- Covered failure/concurrency scenarios (unit): concurrent delivery lock, concurrent retry after partial failure, Redis lock failure surface, concurrent payment callbacks, verify failure→retry, provider create timeout, Telegram one-shot failure + retry, malicious callback rejection, concurrent webhook callbacks.
 - Phase 6 standard verification gate remains `pytest`, `ruff check .`, `ruff format --check .`, `mypy src`, `python -m compileall -q src`, plus Alembic/PostgreSQL/Redis integration and deployment smoke testing when applicable.
 - Phase 6 must not be marked passing merely because code exists; every Definition of Done item needs executable evidence.
-- Active branch for remaining Phase 6 work: `phase-6-failure-concurrency`.
+- `OPS-001` remains `in_progress` on `main` until backup/restore, deploy smoke, observability metrics, Redis/DB failure integration, and fresh-agent requirements also have evidence.
 
 ## Phase status
 | Phase | Status | Exit condition |
@@ -49,6 +51,8 @@
 
 ### Testing
 - Unit/integration/E2E plus payment timeout, Telegram failure, Redis restart, DB failure, duplicate callbacks/delivery, partial delivery, invalid admin callback, malicious customer callback, and concurrency scenarios.
+- **Done (partial):** unit failure-injection + concurrency suite merged with CI evidence (`34717314211`).
+- **Still open:** Redis restart / DB failure integration under real services; backup/restore drill; deploy smoke.
 
 ### Backup/recovery
 - PostgreSQL backup, restore, migration recovery, and incident-recovery documentation/testing.
