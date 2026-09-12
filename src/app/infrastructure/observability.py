@@ -49,6 +49,17 @@ def clear_metrics() -> None:
     _metrics.clear()
 
 
+def log_event(logger: logging.Logger, event: str, **fields: object) -> None:
+    """Emit a named business event without accepting sensitive fields."""
+    safe = {
+        key: value
+        for key, value in fields.items()
+        if key.lower() not in StructuredJsonFormatter._SENSITIVE
+        and not any(part in key.lower() for part in StructuredJsonFormatter._SENSITIVE)
+    }
+    logger.info("%s", event, extra={"event": event, **safe})
+
+
 class StructuredJsonFormatter(logging.Formatter):
     """Emit machine-readable logs while filtering obvious secret fields."""
 
