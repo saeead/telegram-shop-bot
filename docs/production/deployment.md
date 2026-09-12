@@ -26,6 +26,13 @@ Secrets must be injected by the runtime secret manager and never committed to `.
 7. Start Telegram workers.
 8. Monitor structured logs, metrics, payment callbacks, publication, and delivery errors.
 
+Executable smoke:
+
+```bash
+bash scripts/deploy_smoke.sh
+DEPLOY_SMOKE_DOCKER=1 bash scripts/deploy_smoke.sh
+```
+
 ## Rollback
 
 1. Stop the affected application workers.
@@ -58,4 +65,4 @@ At minimum monitor:
 - Preserve business-state evidence before manual intervention.
 - Prefer idempotent retries over manual duplicate operations.
 
-**Current status: NOT VERIFIED.** Deployment and rollback smoke tests still need executable production-like evidence.
+**Current status: SMOKE AUTOMATED.** `scripts/deploy_smoke.sh` verifies import surface, optional `alembic current`, and optional Docker image build (`DEPLOY_SMOKE_DOCKER=1`). CI already builds the Docker image. Rollback still follows the documented restore path when migrations are incompatible.

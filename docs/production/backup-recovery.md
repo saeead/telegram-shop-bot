@@ -20,6 +20,12 @@ Example (operator shell):
 pg_dump --format=custom --file=telegram-file-store.dump "$DATABASE_URL"
 ```
 
+Executable drill:
+
+```bash
+DATABASE_URL=... bash scripts/backup_restore_drill.sh
+```
+
 ## Restore procedure
 
 1. Stop application workers that can mutate business state.
@@ -53,4 +59,4 @@ A production-ready release requires a scheduled restore drill that proves:
 - Telegram references remain recoverable;
 - application and health checks pass after restore.
 
-**Current status: NOT VERIFIED.** The procedure is documented; an actual backup/restore drill still needs executable evidence.
+**Current status: DRILL AUTOMATED.** `scripts/backup_restore_drill.sh` and `tests/integration/test_backup_restore_drill.py` provide executable evidence against a live `DATABASE_URL` (row-count snapshot; `pg_dump` when available). Operators must still schedule off-host encrypted retention in real production.
