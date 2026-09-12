@@ -4,10 +4,14 @@ from app.infrastructure.observability import StructuredJsonFormatter
 
 
 def configure_logging(level: str) -> None:
-    """Configure one predictable application-wide structured logging policy."""
+    """Configure structured application logging without removing host handlers."""
     root = logging.getLogger()
     root.setLevel(getattr(logging, level))
-    handler = logging.StreamHandler()
-    handler.setFormatter(StructuredJsonFormatter())
-    root.handlers.clear()
-    root.addHandler(handler)
+    if not root.handlers:
+        handler = logging.StreamHandler()
+        handler.setFormatter(StructuredJsonFormatter())
+        root.addHandler(handler)
+        return
+    for handler in root.handlers:
+        if isinstance(handler, logging.StreamHandler):
+            handler.setFormatter(StructuredJsonFormatter())
