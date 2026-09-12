@@ -144,7 +144,7 @@ async def _handle_buy(
     except CommerceError as exc:
         await callback.answer(str(exc), show_alert=True)
         return
-    except Exception:
+    except (TimeoutError, OSError, RuntimeError):
         await callback.answer("Payment could not be started", show_alert=True)
         return
     await callback.answer("Payment link created")
@@ -197,7 +197,11 @@ async def _answer_categories(callback: CallbackQuery, categories: list[str]) -> 
     for category in categories:
         try:
             buttons.append(
-                [InlineKeyboardButton(text=category, callback_data=encode_callback("category", category))]
+                [
+                    InlineKeyboardButton(
+                        text=category, callback_data=encode_callback("category", category)
+                    )
+                ]
             )
         except ValueError:
             continue
@@ -213,12 +217,16 @@ async def _answer_tags(callback: CallbackQuery, tags: list[str]) -> None:
     buttons: list[list[InlineKeyboardButton]] = []
     for tag in tags:
         try:
-            buttons.append([InlineKeyboardButton(text=tag, callback_data=encode_callback("tag", tag))])
+            buttons.append(
+                [InlineKeyboardButton(text=tag, callback_data=encode_callback("tag", tag))]
+            )
         except ValueError:
             continue
     buttons.append([InlineKeyboardButton(text="Home", callback_data="v1:products:home")])
     if callback.message:
-        await callback.message.answer("Tags", reply_markup=InlineKeyboardMarkup(inline_keyboard=buttons))
+        await callback.message.answer(
+            "Tags", reply_markup=InlineKeyboardMarkup(inline_keyboard=buttons)
+        )
     await callback.answer()
 
 

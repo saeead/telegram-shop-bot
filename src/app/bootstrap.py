@@ -10,7 +10,11 @@ from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, async_sessionmaker
 
 from app.application.commerce_ports import PaymentProvider
 from app.application.commerce_service import CommerceService
-from app.application.intake_service import ProductIntakeService, ProductPublisherPort, PublicationError
+from app.application.intake_service import (
+    ProductIntakeService,
+    ProductPublisherPort,
+    PublicationError,
+)
 from app.application.store_service import AdminAuthorizer, StoreService
 from app.config.settings import Settings
 from app.delivery.service import DeliveryService
@@ -90,7 +94,7 @@ class _ConfirmedProductPublisher(ProductPublisherPort):
             raise PublicationError("TELEGRAM_ADMIN_IDS is not configured")
         try:
             await self._runtime.store_service(self._session).publish(actor, product.id, channel_id)
-        except Exception as exc:  # noqa: BLE001 - boundary maps any failure to PublicationError
+        except (ValueError, RuntimeError, OSError, PermissionError) as exc:
             raise PublicationError(str(exc)) from exc
 
 
