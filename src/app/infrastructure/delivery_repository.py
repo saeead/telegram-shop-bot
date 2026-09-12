@@ -29,7 +29,7 @@ class SqlAlchemyDeliveryRepository(DeliveryRepositoryPort):
         result = await self._session.scalars(
             select(DeliveryRecordModel)
             .where(DeliveryRecordModel.order_id == order_id)
-            .order_by(DeliveryRecordModel.created_at, DeliveryRecordModel.file_id)
+            .order_by(DeliveryRecordModel.file_id)
         )
         return [self._to_domain(model) for model in result]
 
