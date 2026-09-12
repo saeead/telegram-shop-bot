@@ -69,3 +69,5 @@ def test_backup_script_runs_when_database_configured() -> None:
     body = report.read_text(encoding="utf-8")
     assert "database_reachable=1" in body
     assert "backup_restore_drill_finished=" in body
+    # pg_dump may be skipped on client/server version mismatch; snapshot is required.
+    assert "pg_dump_ok=" in body
