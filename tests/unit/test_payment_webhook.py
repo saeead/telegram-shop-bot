@@ -127,7 +127,9 @@ async def test_zarinpal_callback_pays_and_delivers() -> None:
     def delivery_factory(_session):
         return FakeDelivery()
 
-    app = create_payment_app(session_factory, commerce_factory, delivery_factory, bot_notifier=notify)
+    app = create_payment_app(
+        session_factory, commerce_factory, delivery_factory, bot_notifier=notify
+    )
     async with TestClient(TestServer(app)) as client:
         response = await client.get(
             "/payments/zarinpal/callback",

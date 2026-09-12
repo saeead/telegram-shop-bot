@@ -77,9 +77,7 @@ def _register_routers(runtime: AppRuntime) -> None:
             default_provider="zarinpal",
         )
     )
-    runtime.dispatcher.include_router(
-        _wrap_admin_router(session_factory, session_store, settings)
-    )
+    runtime.dispatcher.include_router(_wrap_admin_router(session_factory, session_store, settings))
     runtime.dispatcher.include_router(
         _wrap_intake_router(session_factory, session_intake, settings)
     )

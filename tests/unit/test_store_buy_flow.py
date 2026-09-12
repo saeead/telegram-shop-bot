@@ -92,7 +92,9 @@ class FakeProvider:
 @pytest.mark.asyncio
 async def test_buy_creates_order_and_payment_link() -> None:
     product = _published_product()
-    commerce = CommerceService(FakeProducts(product), FakeCommerceRepo(), {"zarinpal": FakeProvider()})
+    commerce = CommerceService(
+        FakeProducts(product), FakeCommerceRepo(), {"zarinpal": FakeProvider()}
+    )
     order = await commerce.create_order(42, product.id, 1, f"buy:42:{product.id}")
     payment = await commerce.create_payment(order.id, "zarinpal", "https://bot.test/callback")
     assert isinstance(order, Order)
@@ -103,6 +105,8 @@ async def test_buy_creates_order_and_payment_link() -> None:
 async def test_buy_rejects_unpublished_product() -> None:
     product = _published_product("BUY-2")
     product.status = ProductStatus.READY
-    commerce = CommerceService(FakeProducts(product), FakeCommerceRepo(), {"zarinpal": FakeProvider()})
+    commerce = CommerceService(
+        FakeProducts(product), FakeCommerceRepo(), {"zarinpal": FakeProvider()}
+    )
     with pytest.raises(CommerceError):
         await commerce.create_order(42, product.id, 1, "k")
