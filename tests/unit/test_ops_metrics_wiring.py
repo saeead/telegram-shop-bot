@@ -71,9 +71,7 @@ def _product() -> Product:
         "IRR",
         status=ProductStatus.PUBLISHED,
         files=[
-            ProductFile(
-                "f", 1, 2, ProductFileType.ARCHIVE, ProductFileRole.MAIN, "a.zip", None, 1
-            )
+            ProductFile("f", 1, 2, ProductFileType.ARCHIVE, ProductFileRole.MAIN, "a.zip", None, 1)
         ],
     )
 
