@@ -14,6 +14,22 @@ from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.asyncio import create_async_engine
 
 
+def _usable_bash() -> str | None:
+    """Return a bash executable that can actually run, or None."""
+    candidate = shutil.which("bash")
+    if candidate is None:
+        return None
+    probe = subprocess.run(
+        [candidate, "-c", "echo ok"],
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+    if probe.returncode != 0 or "ok" not in probe.stdout:
+        return None
+    return candidate
+
+
 @pytest.mark.asyncio
 async def test_backup_drill_snapshots_core_tables() -> None:
     url = os.getenv("DATABASE_URL")
@@ -58,12 +74,13 @@ def test_backup_script_is_executable_and_documents_restore() -> None:
 def test_backup_script_runs_when_database_configured() -> None:
     if not os.getenv("DATABASE_URL"):
         pytest.skip("DATABASE_URL is not configured")
-    if shutil.which("bash") is None:
-        pytest.skip("bash is not available on this platform")
+    bash = _usable_bash()
+    if bash is None:
+        pytest.skip("usable bash is not available on this platform")
 
     report_path = str(Path(tempfile.gettempdir()) / "pytest-backup-drill-report.txt")
     result = subprocess.run(
-        ["bash", "scripts/backup_restore_drill.sh"],
+        [bash, "scripts/backup_restore_drill.sh"],
         check=False,
         capture_output=True,
         text=True,
