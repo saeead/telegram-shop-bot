@@ -8,10 +8,10 @@ def configure_logging(level: str) -> None:
     root = logging.getLogger()
     root.setLevel(getattr(logging, level))
     if not root.handlers:
-        handler = logging.StreamHandler()
-        handler.setFormatter(StructuredJsonFormatter())
-        root.addHandler(handler)
+        stream_handler = logging.StreamHandler()
+        stream_handler.setFormatter(StructuredJsonFormatter())
+        root.addHandler(stream_handler)
         return
-    for handler in root.handlers:
-        if isinstance(handler, logging.StreamHandler):
-            handler.setFormatter(StructuredJsonFormatter())
+    for root_handler in root.handlers:
+        if isinstance(root_handler, logging.StreamHandler):
+            root_handler.setFormatter(StructuredJsonFormatter())
