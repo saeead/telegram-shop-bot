@@ -255,6 +255,9 @@ class CommerceService:
         await self._repository.commit()
         return True
 
+    async def get_order(self, order_id: UUID) -> Order:
+        return await self._require_order(order_id)
+
     async def expire_order(self, order_id: UUID) -> Order:
         order = await self._require_order(order_id)
         if order.is_expired():
