@@ -46,10 +46,14 @@ class ProductModel(Base):
 class ProductFileModel(Base):
     __tablename__ = "product_files"
     __table_args__ = (
-        UniqueConstraint("telegram_chat_id", "telegram_message_id", name="uq_product_file_telegram_message"),
+        UniqueConstraint(
+            "telegram_chat_id", "telegram_message_id", name="uq_product_file_telegram_message"
+        ),
     )
     id: Mapped[UUID] = mapped_column(primary_key=True)
-    product_id: Mapped[UUID] = mapped_column(ForeignKey("products.id", ondelete="CASCADE"), index=True)
+    product_id: Mapped[UUID] = mapped_column(
+        ForeignKey("products.id", ondelete="CASCADE"), index=True
+    )
     telegram_file_id: Mapped[str | None] = mapped_column(String(512), nullable=True)
     telegram_message_id: Mapped[int] = mapped_column(Integer)
     telegram_chat_id: Mapped[int] = mapped_column(Integer)
@@ -112,7 +116,9 @@ class OrderModel(Base):
     currency: Mapped[str] = mapped_column(String(3))
     total_amount: Mapped[Decimal] = mapped_column(Numeric(20, 0))
     status: Mapped[str] = mapped_column(String(32), index=True)
-    expires_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True, index=True)
+    expires_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True, index=True
+    )
     idempotency_key: Mapped[str] = mapped_column(String(255))
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
@@ -153,7 +159,9 @@ class PaymentModel(Base):
     verified_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     order: Mapped[OrderModel] = relationship(back_populates="payments")
     attempts: Mapped[list[PaymentAttemptModel]] = relationship(
-        back_populates="payment", cascade="all, delete-orphan", order_by="PaymentAttemptModel.created_at"
+        back_populates="payment",
+        cascade="all, delete-orphan",
+        order_by="PaymentAttemptModel.created_at",
     )
 
 
@@ -163,7 +171,9 @@ class PaymentAttemptModel(Base):
         UniqueConstraint("idempotency_key", name="uq_payment_attempts_idempotency_key"),
     )
     id: Mapped[UUID] = mapped_column(primary_key=True)
-    payment_id: Mapped[UUID] = mapped_column(ForeignKey("payments.id", ondelete="CASCADE"), index=True)
+    payment_id: Mapped[UUID] = mapped_column(
+        ForeignKey("payments.id", ondelete="CASCADE"), index=True
+    )
     provider: Mapped[str] = mapped_column(String(64), index=True)
     provider_reference: Mapped[str | None] = mapped_column(String(255), nullable=True, index=True)
     amount: Mapped[Decimal] = mapped_column(Numeric(20, 0))
@@ -178,9 +188,7 @@ class PaymentAttemptModel(Base):
 
 class DeliveryRecordModel(Base):
     __tablename__ = "delivery_records"
-    __table_args__ = (
-        UniqueConstraint("order_id", "file_id", name="uq_delivery_order_file"),
-    )
+    __table_args__ = (UniqueConstraint("order_id", "file_id", name="uq_delivery_order_file"),)
     id: Mapped[UUID] = mapped_column(primary_key=True)
     order_id: Mapped[UUID] = mapped_column(ForeignKey("orders.id", ondelete="CASCADE"), index=True)
     product_id: Mapped[UUID] = mapped_column(index=True)
@@ -190,7 +198,9 @@ class DeliveryRecordModel(Base):
     telegram_message_id: Mapped[int | None] = mapped_column(BIGINT, nullable=True)
     status: Mapped[str] = mapped_column(String(32), index=True)
     attempt_count: Mapped[int] = mapped_column(Integer, default=0)
-    delivered_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True, index=True)
+    delivered_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True, index=True
+    )
     last_error: Mapped[str | None] = mapped_column(String(2000), nullable=True)
 
 
