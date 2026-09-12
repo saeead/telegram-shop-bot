@@ -101,10 +101,7 @@ class DeliveryService:
         files: list[ProductFile],
     ) -> None:
         ordered_files = sorted(files, key=lambda item: (item.ordering, str(item.id)))
-        existing = {
-            record.file_id: record
-            for record in await self._repository.list_for_order(order_id)
-        }
+        existing = {record.file_id: record for record in await self._repository.list_for_order(order_id)}
         records: list[DeliveryRecord] = []
         for file in ordered_files:
             record = existing.get(file.id)
@@ -151,10 +148,7 @@ class DeliveryService:
     async def _summary(self, order_id: UUID) -> DeliverySummary:
         records = await self._repository.list_for_order(order_id)
         delivered = sum(record.status is DeliveryStatus.DELIVERED for record in records)
-        failed = sum(
-            record.status in {DeliveryStatus.FAILED, DeliveryStatus.PARTIAL}
-            for record in records
-        )
+        failed = sum(record.status in {DeliveryStatus.FAILED, DeliveryStatus.PARTIAL} for record in records)
         pending = len(records) - delivered - failed
         if records and delivered == len(records):
             status = DeliveryStatus.DELIVERED
