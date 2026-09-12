@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import logging
 from uuid import UUID
 
 from app.application.catalog_ports import ProductRepository
@@ -15,6 +16,7 @@ from app.delivery.ports import (
 )
 from app.domain.order import Order, OrderStatus
 from app.domain.product import ProductFile
+from app.infrastructure.observability import increment_metric, log_event
 
 
 class DeliveryError(ValueError):
@@ -65,7 +67,19 @@ class DeliveryService:
                 await self._deliver_product(
                     order_id, customer_telegram_id, product.id, product.main_files
                 )
-            return await self._summary(order_id)
+            summary = await self._summary(order_id)
+            if summary.status.value == "delivered":
+                increment_metric("delivery_total")
+            elif summary.failed:
+                increment_metric("delivery_failures_total")
+            log_event(
+                logging.getLogger(__name__),
+                "delivery_finished",
+                order_id=str(order_id),
+                delivered=summary.delivered,
+                failed=summary.failed,
+            )
+            return summary
         finally:
             if self._lock is not None and acquired:
                 await self._lock.release_lock(lock_key)
