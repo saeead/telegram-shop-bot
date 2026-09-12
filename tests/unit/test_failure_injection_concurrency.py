@@ -363,7 +363,9 @@ async def test_telegram_one_shot_failure_then_retry_delivers_remaining() -> None
     source = ControllableSource(fail_once=True)
     commerce = FakeCommerceRepo()
     commerce.orders[order.id] = order
-    service = DeliveryService(FakeProducts(product), commerce, repo, source, ConcurrentLock(), 900, 901)
+    service = DeliveryService(
+        FakeProducts(product), commerce, repo, source, ConcurrentLock(), 900, 901
+    )
     first = await service.deliver(order.id, order.customer_telegram_id)
     # First file fails once across archive+backup then may partial/fail; second may succeed
     assert first.delivered + first.failed + first.pending == 2
