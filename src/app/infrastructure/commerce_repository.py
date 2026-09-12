@@ -10,8 +10,21 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from app.application.commerce_ports import CommerceRepositoryPort
-from app.domain.order import Order, OrderItem, OrderStatus, Payment, PaymentAttempt, PaymentAttemptStatus, PaymentStatus
-from app.infrastructure.models import OrderItemModel, OrderModel, PaymentAttemptModel, PaymentModel
+from app.domain.order import (
+    Order,
+    OrderItem,
+    OrderStatus,
+    Payment,
+    PaymentAttempt,
+    PaymentAttemptStatus,
+    PaymentStatus,
+)
+from app.infrastructure.models import (
+    OrderItemModel,
+    OrderModel,
+    PaymentAttemptModel,
+    PaymentModel,
+)
 
 
 class SqlAlchemyCommerceRepository(CommerceRepositoryPort):
@@ -102,7 +115,9 @@ class SqlAlchemyCommerceRepository(CommerceRepositoryPort):
         )
         return self._payment_to_domain(model) if model else None
 
-    async def get_payment_by_provider_reference(self, provider: str, reference: str) -> Payment | None:
+    async def get_payment_by_provider_reference(
+        self, provider: str, reference: str
+    ) -> Payment | None:
         model = await self._session.scalar(
             select(PaymentModel)
             .options(selectinload(PaymentModel.attempts))
