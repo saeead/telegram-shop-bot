@@ -7,7 +7,7 @@ import logging
 from collections import Counter
 from contextvars import ContextVar
 from dataclasses import dataclass
-from typing import Any
+from typing import Any, ClassVar
 from uuid import uuid4
 
 _correlation_id: ContextVar[str] = ContextVar("correlation_id", default="-")
@@ -63,7 +63,14 @@ def log_event(logger: logging.Logger, event: str, **fields: object) -> None:
 class StructuredJsonFormatter(logging.Formatter):
     """Emit machine-readable logs while filtering obvious secret fields."""
 
-    _SENSITIVE = {"token", "secret", "password", "authorization", "merchant_id", "api_key"}
+    _SENSITIVE: ClassVar[set[str]] = {
+        "token",
+        "secret",
+        "password",
+        "authorization",
+        "merchant_id",
+        "api_key",
+    }
 
     def format(self, record: logging.LogRecord) -> str:
         payload: dict[str, Any] = {
